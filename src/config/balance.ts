@@ -44,8 +44,12 @@ export const CAMERA = {
 export const BOAT = {
   maxSpeed: 320,
   acceleration: 620,
-  dragPerSec: 0.9, // velocity is multiplied by this each second when not thrusting
-  turnRateDegPerSec: 220,
+  /** Fraction of speed kept per second WHILE steering — light, for momentum/drift. */
+  dragActive: 0.4,
+  /** Fraction kept per second WHEN the stick is released — strong, so you can
+   *  brake and park on a dig site instead of sliding forever. */
+  dragIdle: 0.04,
+  turnRateDegPerSec: 250,
   radius: 26, // collision circle
   hitKnockback: 260,
   bobAmplitude: 2,
@@ -60,7 +64,7 @@ export const BOOST = {
 } as const;
 
 export const DIG = {
-  radius: 64,
+  radius: 80, // catchment around a site — forgiving enough to park-and-dig
   timeMs: 1800,
 } as const;
 
