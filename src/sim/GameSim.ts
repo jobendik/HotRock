@@ -3,8 +3,10 @@ import type { InputFrame, PlayerId, RoundConfig } from '@/core/types';
 import { Rng } from '@/core/rng';
 import { WORLD } from '@/config/balance';
 import { type WorldState, type Boat, makeBoat, PLAYER_COLORS } from '@/sim/WorldState';
-import { generateIslands } from '@/sim/worldgen';
+import { generateIslands, generateSites } from '@/sim/worldgen';
 import { stepMovement } from '@/sim/systems/movement';
+import { stepDigging } from '@/sim/systems/digging';
+import { stepPickups } from '@/sim/systems/pickups';
 
 const LOCAL_ID: PlayerId = 'p0';
 
@@ -27,6 +29,7 @@ export class GameSim {
     const spawnX = WORLD.width / 2;
     const spawnY = WORLD.height / 2;
     const islands = generateIslands(rng, spawnX, spawnY);
+    const sites = generateSites(rng, islands, spawnX, spawnY);
     const player: Boat = makeBoat(LOCAL_ID, 'You', false, spawnX, spawnY, PLAYER_COLORS[0]);
 
     this.state = {
@@ -38,6 +41,9 @@ export class GameSim {
       localId: LOCAL_ID,
       boats: [player],
       islands,
+      sites,
+      pickups: [],
+      nextPickupId: 0,
     };
 
     this.sink.emit('round:started', {
@@ -52,6 +58,8 @@ export class GameSim {
     const dt = dtMs / 1000;
     this.state.timeMs += dtMs;
     stepMovement(this.state, inputs, dt);
+    stepDigging(this.state, dt, this.sink);
+    stepPickups(this.state, dt, this.sink);
   }
 
   getState(): WorldState {
@@ -68,6 +76,9 @@ export class GameSim {
       localId: LOCAL_ID,
       boats: [],
       islands: [],
+      sites: [],
+      pickups: [],
+      nextPickupId: 0,
     };
   }
 }

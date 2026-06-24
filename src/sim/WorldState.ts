@@ -1,12 +1,12 @@
-import type { PlayerId } from '@/core/types';
+import type { PlayerId, DigReward } from '@/core/types';
 
 /**
  * The authoritative world — plain serialisable data only (NO Phaser, NO DOM).
  * The exact same shape is produced by `GameSim` in the browser today and by the
  * server later, which is what lets the netcode slot in behind the WorldModel seam.
  *
- * Grows per milestone: M1 adds boats + islands; sites/rock/pickups/storm/round
- * land in later milestones.
+ * Grows per milestone: M1 adds boats + islands; M2 adds dig sites + loose gems;
+ * rock/storm/round land in later milestones.
  */
 
 export interface Boat {
@@ -16,9 +16,12 @@ export interface Boat {
   /** Position (world px). */
   x: number;
   y: number;
-  /** Velocity (px/s). */
+  /** Velocity (px/s) from thrust + drag (speed-clamped). */
   vx: number;
   vy: number;
+  /** External impulse velocity (trap/ram) — unclamped, decays separately. */
+  knockVx: number;
+  knockVy: number;
   /** Facing in radians (0 = +x). */
   angle: number;
   /** Angular velocity (rad/s) from the last step — render-only banking cue. */
@@ -30,6 +33,14 @@ export interface Boat {
   boosting: boolean;
   /** Remaining boost time in ms while `boosting`. */
   boostMsLeft: number;
+  /** Accumulated cash this round (gems smuggled). */
+  cash: number;
+  /** Stat: number of completed digs this round. */
+  digs: number;
+  /** Site currently being dug (within range), or null. */
+  digSiteId: string | null;
+  /** Hold time accrued at `digSiteId` (ms). */
+  digMs: number;
   /** Stable render colour (one of the player palette entries). */
   color: string;
 }
@@ -39,6 +50,25 @@ export interface Island {
   x: number;
   y: number;
   radius: number;
+}
+
+/** A dig site. The reward is pre-rolled at worldgen so rounds are reproducible. */
+export interface DigSite {
+  id: string;
+  x: number;
+  y: number;
+  dug: boolean;
+  reward: DigReward;
+}
+
+/** A loose gem drifting in the water (scattered by a trap; collectible by anyone). */
+export interface Pickup {
+  id: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  value: number;
 }
 
 export interface WorldState {
@@ -53,6 +83,10 @@ export interface WorldState {
   localId: PlayerId;
   boats: Boat[];
   islands: Island[];
+  sites: DigSite[];
+  pickups: Pickup[];
+  /** Monotonic id source for pickups. */
+  nextPickupId: number;
 }
 
 /** Player palette — also surfaced to the minimap. Index 0 is the local player. */
@@ -75,12 +109,18 @@ export function makeBoat(
     y,
     vx: 0,
     vy: 0,
+    knockVx: 0,
+    knockVy: 0,
     angle: -Math.PI / 2,
     angularVel: 0,
     speedTier: 0,
     boostCharge: 1,
     boosting: false,
     boostMsLeft: 0,
+    cash: 0,
+    digs: 0,
+    digSiteId: null,
+    digMs: 0,
     color,
   };
 }

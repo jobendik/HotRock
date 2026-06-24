@@ -35,6 +35,9 @@ function worldWith(boats: Boat[]): WorldState {
     localId: 'p0',
     boats,
     islands: [],
+    sites: [],
+    pickups: [],
+    nextPickupId: 0,
   };
 }
 

@@ -48,6 +48,7 @@ export interface HudSnapshot {
   cash: number;
   speedTier: number;
   boostCharge: number; // 0..1
+  digProgress: number; // 0..1 (0 = not digging) — drives the radial dig ring
   tools: ToolState[];
   carrying: boolean; // is the LOCAL player holding the Rock?
   timeLeftMs: number;

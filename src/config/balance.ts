@@ -49,6 +49,7 @@ export const BOAT = {
   radius: 26, // collision circle
   hitKnockback: 260,
   bobAmplitude: 2,
+  knockbackFriction: 0.08, // external impulse (trap/ram) retains this fraction per second
 } as const;
 
 export const BOOST = {
@@ -79,6 +80,13 @@ export const TRAP = {
   knockback: 300,
   gemsScattered: 2,
   scatterValue: 60,
+} as const;
+
+/** Loose gems in the water (from traps now; from Rock drops in M4). */
+export const PICKUP = {
+  gemRadius: 44, // auto-collect radius when a boat drives over a loose gem
+  friction: 0.05, // scattered gems retain this fraction of speed per second (settle fast)
+  scatterSpeed: 150, // initial fly-out speed of scattered gems
 } as const;
 
 export const UPGRADES: Record<UpgradeId, { cost: number | readonly number[]; label: string }> = {

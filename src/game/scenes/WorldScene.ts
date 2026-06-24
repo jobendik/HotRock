@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { bus } from '@/core/EventBus';
-import { uiStore } from '@/core/store';
+import { uiStore, minimap } from '@/core/store';
 import { clamp, lerp, lerpAngle } from '@/core/math';
-import type { PlayerId, RoundConfig } from '@/core/types';
-import { WORLD, ROUND, TICK, CAMERA, BOTS } from '@/config/balance';
+import type { PlayerId, RoundConfig, MinimapSnapshot } from '@/core/types';
+import { WORLD, ROUND, TICK, CAMERA, BOTS, DIG, DOCKS } from '@/config/balance';
 import { LocalWorldModel } from '@/game/world/LocalWorldModel';
 import type { WorldModel, WorldView } from '@/game/world/WorldModel';
 import { InputController } from '@/game/input/InputController';
@@ -16,6 +16,7 @@ interface PrevState {
 }
 
 const HUD_PUSH_MS = 75; // ~13 Hz HUD snapshot push (never per frame)
+const MINI_PUSH_MS = 50; // ~20 Hz minimap snapshot (slightly smoother than HUD)
 
 /**
  * The world scene. Phaser owns rendering, the camera, and input capture only —
@@ -31,10 +32,13 @@ export class WorldScene extends Phaser.Scene {
   private localId: PlayerId = 'p0';
   private camZoom = 1;
   private lastHudPushMs = 0;
+  private lastMiniPushMs = 0;
+  private readonly offBus: Array<() => void> = [];
 
   private readonly boatViews = new Map<PlayerId, BoatView>();
   private readonly prev = new Map<PlayerId, PrevState>();
   private islandGfx: Phaser.GameObjects.Graphics | undefined;
+  private sitesGfx: Phaser.GameObjects.Graphics | undefined;
 
   private readonly roundConfig: RoundConfig = {
     playerCount: 1,
@@ -54,8 +58,17 @@ export class WorldScene extends Phaser.Scene {
     this.model = new LocalWorldModel(bus);
     this.inputCtl = new InputController();
 
-    bus.on('intent:startRound', () => this.beginRound());
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.inputCtl.destroy());
+    this.offBus.push(bus.on('intent:startRound', () => this.beginRound()));
+    // Floating "+N" at the world position of a local gem pickup (juice).
+    this.offBus.push(
+      bus.on('gem:collected', ({ value, worldX, worldY }) => {
+        if (this.running) this.spawnFloat(worldX, worldY, `+${value}`);
+      }),
+    );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.inputCtl.destroy();
+      for (const off of this.offBus) off();
+    });
     bus.emit('game:ready');
   }
 
@@ -69,6 +82,7 @@ export class WorldScene extends Phaser.Scene {
     const view = this.model.getView();
     this.localId = view.localId;
     this.drawIslands(view);
+    this.sitesGfx = this.add.graphics().setDepth(1);
     this.syncBoatViews(view);
     this.snapshotPrev(view);
 
@@ -90,6 +104,8 @@ export class WorldScene extends Phaser.Scene {
     this.prev.clear();
     this.islandGfx?.destroy();
     this.islandGfx = undefined;
+    this.sitesGfx?.destroy();
+    this.sitesGfx = undefined;
   }
 
   // ---- main loop ----
@@ -112,8 +128,29 @@ export class WorldScene extends Phaser.Scene {
     const alpha = clamp(this.accumulatorMs / TICK.fixedDtMs, 0, 1);
     const view = this.model.getView();
     this.renderBoats(view, alpha, time);
+    this.drawSites(view, time);
     this.updateCamera(view);
     this.pushHud(view, time);
+    this.pushMinimap(view, time);
+  }
+
+  /** Redraw dig-site markers (cheap: a handful of circles), pulsing while undug. */
+  private drawSites(view: WorldView, time: number): void {
+    const g = this.sitesGfx;
+    if (!g) return;
+    g.clear();
+    const pulse = 1 + Math.sin(time * 0.004) * 0.08;
+    for (const s of view.sites) {
+      if (s.dug) {
+        g.lineStyle(2, 0x2a4d57, 0.5);
+        g.strokeCircle(s.x, s.y, DIG.radius * 0.45);
+      } else {
+        g.lineStyle(3, 0xefe3c6, 0.45);
+        g.strokeCircle(s.x, s.y, DIG.radius * 0.6 * pulse);
+        g.fillStyle(0xf0c24a, 0.9);
+        g.fillCircle(s.x, s.y, 5);
+      }
+    }
   }
 
   // ---- rendering ----
@@ -150,14 +187,61 @@ export class WorldScene extends Phaser.Scene {
     const local = this.findLocal(view);
     if (!local) return;
     uiStore.set({
-      cash: 0,
+      cash: local.cash,
       speedTier: local.speedTier,
       // Read the bar as full while a boost is actively firing, then refilling.
       boostCharge: local.boosting ? 1 : local.boostCharge,
+      digProgress: local.digSiteId ? clamp(local.digMs / DIG.timeMs, 0, 1) : 0,
       tools: [],
       carrying: false,
       timeLeftMs: 0,
       heat: 0,
+    });
+  }
+
+  private pushMinimap(view: WorldView, time: number): void {
+    if (time - this.lastMiniPushMs < MINI_PUSH_MS) return;
+    this.lastMiniPushMs = time;
+    minimap.current = this.buildMinimap(view);
+  }
+
+  private buildMinimap(view: WorldView): MinimapSnapshot {
+    return {
+      boats: view.boats.map((b) => ({
+        id: b.id,
+        x: b.x,
+        y: b.y,
+        isLocal: b.id === this.localId,
+        isBot: b.isBot,
+        carrying: false, // set in M4
+        color: b.color,
+      })),
+      sites: view.sites.map((s) => ({ id: s.id, x: s.x, y: s.y, dug: s.dug })),
+      docks: DOCKS.map((d) => ({ x: d.x, y: d.y })),
+      rock: null,
+      storm: null,
+      worldW: view.width,
+      worldH: view.height,
+    };
+  }
+
+  private spawnFloat(x: number, y: number, text: string): void {
+    const label = this.add
+      .text(x, y, text, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '20px',
+        color: '#f0c24a',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setDepth(6);
+    this.tweens.add({
+      targets: label,
+      y: y - 42,
+      alpha: 0,
+      duration: 900,
+      ease: 'Cubic.out',
+      onComplete: () => label.destroy(),
     });
   }
 

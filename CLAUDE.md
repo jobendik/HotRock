@@ -56,4 +56,4 @@ typecheck + lint + test pass · `dev` runs · no new `any` · all gameplay numbe
 - `docs/CONVENTIONS.md` — coding standards & patterns.
 
 ## Current status
-> Keep this line current as you progress. **Milestone: M1 complete — drivable boat (pure `sim/` movement + circle physics, fixed-timestep + interpolation), follow camera with look-ahead + boost zoom, procedural island colliders, soft walls, desktop keyboard + mobile DOM joystick, all behind the `WorldModel` seam. Next: M2 — dig sites + digging + gems + cash.**
+> Keep this line current as you progress. **Milestone: M2 complete — dig sites (seeded loot), hold/auto digging with radial ring, gems→cash with animated counter + floating "+N", traps (knockback + scattered loose gems), pickups system, and a DOM `<canvas>` minimap (boats/sites/docks). Next: M3 — upgrades + tools.**

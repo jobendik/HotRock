@@ -79,8 +79,12 @@ function updateBoat(boat: Boat, input: InputFrame, dt: number): void {
     boat.vy *= s;
   }
 
-  boat.x += boat.vx * dt;
-  boat.y += boat.vy * dt;
+  // Integrate thrust + (unclamped) knockback impulse, then decay the impulse.
+  boat.x += (boat.vx + boat.knockVx) * dt;
+  boat.y += (boat.vy + boat.knockVy) * dt;
+  const knockDecay = Math.pow(BOAT.knockbackFriction, dt);
+  boat.knockVx *= knockDecay;
+  boat.knockVy *= knockDecay;
 }
 
 /** Boost meter: recharges while idle; firing spends the full meter for a fixed burst. */
