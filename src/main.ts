@@ -1,5 +1,6 @@
 import '@/ui/styles/tokens.css';
 import '@/ui/styles/ui.css';
+import '@/ui/styles/hud.css';
 import { UIRoot } from '@/ui/UIRoot';
 import { PhaserGame } from '@/game/PhaserGame';
 import { createPlatform } from '@/platform/crazygames';

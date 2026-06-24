@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
+import { generateTextures } from '@/game/gfx/textures';
 
 /**
- * Boot: (M1+) generate the programmatic placeholder textures, then hand off to
- * the world. Kept intentionally tiny — texture generation lands with the boat
- * in M1 via gfx/textures.ts.
+ * Boot: generate the programmatic placeholder textures, then hand off to the
+ * world scene. No external assets — everything is drawn at runtime (gfx/textures).
  */
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +11,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    generateTextures(this);
     this.scene.start('world');
   }
 }

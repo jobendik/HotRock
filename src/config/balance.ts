@@ -10,6 +10,28 @@ export const WORLD = {
   width: 4000,
   height: 3000,
   wallPadding: 120, // soft bounce margin at the edges
+  wallSpring: 9, // inward acceleration/sec applied within the padding band
+} as const;
+
+/** Fixed-timestep simulation clock. Fixed dt + seeded RNG ⇒ deterministic rounds. */
+export const TICK = {
+  fixedDtMs: 1000 / 60,
+  maxStepsPerFrame: 5, // spiral-of-death guard when a frame stalls
+} as const;
+
+export const MOVEMENT = {
+  joystickDeadzone: 0.12, // ignore tiny stick noise so the boat holds heading
+} as const;
+
+/** Procedural island colliders (circles), generated from the round seed. */
+export const ISLANDS = {
+  count: 14,
+  minRadius: 70,
+  maxRadius: 180,
+  edgeMargin: 200, // keep islands off the very edges
+  minGap: 90, // minimum open water between two islands
+  dockClearance: 260, // keep docks approachable
+  spawnClearance: 340, // keep the player's spawn clear
 } as const;
 
 export const CAMERA = {

@@ -56,4 +56,4 @@ typecheck + lint + test pass · `dev` runs · no new `any` · all gameplay numbe
 - `docs/CONVENTIONS.md` — coding standards & patterns.
 
 ## Current status
-> Keep this line current as you progress. **Milestone: M0 complete — scaffolding done (layers, event contract, platform stub, Phaser boots a blank WorldScene, DOM Main Menu emits `intent:startRound`). Next: M1 — boat + world + camera + input.**
+> Keep this line current as you progress. **Milestone: M1 complete — drivable boat (pure `sim/` movement + circle physics, fixed-timestep + interpolation), follow camera with look-ahead + boost zoom, procedural island colliders, soft walls, desktop keyboard + mobile DOM joystick, all behind the `WorldModel` seam. Next: M2 — dig sites + digging + gems + cash.**

@@ -65,3 +65,18 @@ export interface Events {
 }
 
 export type EventName = keyof Events;
+
+/** Event names whose payload is `void` (can be emitted with no second argument). */
+export type VoidKeys = { [K in keyof Events]: Events[K] extends void ? K : never }[keyof Events];
+
+/**
+ * The typed emit surface the simulation/game use to broadcast domain events.
+ * {@link EventBus} satisfies this structurally, so `LocalWorldModel` passes the
+ * real bus while tests pass a capturing stub — keeping `GameSim` decoupled from
+ * the transport. In multiplayer the server reuses the same sink to forward
+ * authoritative events onto the bus, so the UI never changes.
+ */
+export interface EventSink {
+  emit<K extends VoidKeys>(event: K): void;
+  emit<K extends keyof Events>(event: K, payload: Events[K]): void;
+}

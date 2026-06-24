@@ -1,5 +1,6 @@
 import { bus } from '@/core/EventBus';
 import { MainMenu } from '@/ui/screens/MainMenu';
+import { Hud } from '@/ui/hud/Hud';
 
 /**
  * Top-level DOM UI controller. Mounts into #ui-root and swaps screens in
@@ -10,12 +11,20 @@ import { MainMenu } from '@/ui/screens/MainMenu';
 export class UIRoot {
   private readonly root: HTMLElement;
   private readonly menu = new MainMenu();
+  private readonly hud = new Hud();
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.menu.mount(this.root);
+    this.hud.mount(this.root);
 
-    bus.on('round:started', () => this.menu.hide());
-    bus.on('round:ended', () => this.menu.show());
+    bus.on('round:started', () => {
+      this.menu.hide();
+      this.hud.show();
+    });
+    bus.on('round:ended', () => {
+      this.hud.hide();
+      this.menu.show();
+    });
   }
 }
