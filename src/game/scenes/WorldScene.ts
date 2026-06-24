@@ -3,7 +3,7 @@ import { bus } from '@/core/EventBus';
 import { uiStore, minimap } from '@/core/store';
 import { clamp, lerp, lerpAngle } from '@/core/math';
 import type { PlayerId, RoundConfig, MinimapSnapshot, QualityLevel } from '@/core/types';
-import { WORLD, ROUND, TICK, CAMERA, BOTS, DIG, DOCKS } from '@/config/balance';
+import { WORLD, ROUND, TICK, CAMERA, BOTS, DIG, DOCKS, EXTRACT } from '@/config/balance';
 import { LocalWorldModel } from '@/game/world/LocalWorldModel';
 import type { WorldModel, WorldView } from '@/game/world/WorldModel';
 import { InputController } from '@/game/input/InputController';
@@ -44,6 +44,8 @@ export class WorldScene extends Phaser.Scene {
   private readonly prev = new Map<PlayerId, PrevState>();
   private islandGfx: Phaser.GameObjects.Graphics | undefined;
   private sitesGfx: Phaser.GameObjects.Graphics | undefined;
+  private dockGfx: Phaser.GameObjects.Graphics | undefined;
+  private dockLabels: Phaser.GameObjects.Text[] = [];
   private rockView: RockView | undefined;
 
   private readonly roundConfig: RoundConfig = {
@@ -111,6 +113,18 @@ export class WorldScene extends Phaser.Scene {
     const view = this.model.getView();
     this.localId = view.localId;
     this.drawIslands(view);
+    this.dockGfx = this.add.graphics().setDepth(0);
+    this.dockLabels = DOCKS.map((d) =>
+      this.add
+        .text(d.x, d.y - 2, '$', {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '32px',
+          color: '#ffe49a',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+        .setDepth(1),
+    );
     this.sitesGfx = this.add.graphics().setDepth(1);
     this.syncBoatViews(view);
     this.snapshotPrev(view);
@@ -135,6 +149,10 @@ export class WorldScene extends Phaser.Scene {
     this.islandGfx = undefined;
     this.sitesGfx?.destroy();
     this.sitesGfx = undefined;
+    this.dockGfx?.destroy();
+    this.dockGfx = undefined;
+    for (const l of this.dockLabels) l.destroy();
+    this.dockLabels = [];
     this.rockView?.destroy();
     this.rockView = undefined;
   }
@@ -182,6 +200,7 @@ export class WorldScene extends Phaser.Scene {
     const view = this.model.getView();
     this.renderBoats(view, alpha, time);
     this.renderRock(view, alpha, time);
+    this.drawDocks(view, time);
     this.drawSites(view, time);
     this.updateCamera(view);
     this.pushHud(view, time);
@@ -209,6 +228,46 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     this.rockView.sync(x, y, time, rock.carrierId !== null);
+  }
+
+  /** Draw the black-market docks: a platform + a glowing extraction ring. The
+   *  dock the local carrier is heading to is highlighted so "deliver here" reads. */
+  private drawDocks(view: WorldView, time: number): void {
+    const g = this.dockGfx;
+    if (!g) return;
+    g.clear();
+
+    const local = this.findLocal(view);
+    let targetIdx = -1;
+    if (local?.carrying) {
+      let bestD = Infinity;
+      DOCKS.forEach((d, i) => {
+        const dd = (d.x - local.x) ** 2 + (d.y - local.y) ** 2;
+        if (dd < bestD) {
+          bestD = dd;
+          targetIdx = i;
+        }
+      });
+    }
+
+    const pulse = 1 + Math.sin(time * 0.005) * 0.06;
+    DOCKS.forEach((d, i) => {
+      const target = i === targetIdx;
+      // extraction zone
+      g.fillStyle(0xf0c24a, target ? 0.12 : 0.05);
+      g.fillCircle(d.x, d.y, EXTRACT.dockRadius);
+      g.lineStyle(target ? 5 : 3, target ? 0xffe49a : 0xf0c24a, target ? 0.95 : 0.55);
+      g.strokeCircle(d.x, d.y, EXTRACT.dockRadius * (target ? pulse : 1));
+      // platform (dark wood with gold trim)
+      g.fillStyle(0x2e2013, 1);
+      g.fillRoundedRect(d.x - 38, d.y - 38, 76, 76, 10);
+      g.fillStyle(0x5a4326, 1);
+      g.fillRoundedRect(d.x - 30, d.y - 30, 60, 60, 8);
+      g.lineStyle(2, 0x2e2013, 0.7);
+      for (let p = -19; p <= 19; p += 12) g.lineBetween(d.x - 30, d.y + p, d.x + 30, d.y + p);
+      g.lineStyle(3, 0xf0c24a, 0.9);
+      g.strokeRoundedRect(d.x - 30, d.y - 30, 60, 60, 8);
+    });
   }
 
   /** Redraw dig-site markers (cheap: a handful of circles), pulsing while undug. */

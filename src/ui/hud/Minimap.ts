@@ -62,10 +62,15 @@ export class Minimap {
       ctx.fill();
     }
 
-    // docks
-    ctx.fillStyle = '#f0c24a';
+    // docks — the delivery points; outlined gold squares so they stand out
     for (const d of snap.docks) {
-      ctx.fillRect(d.x * sx - 2.5, d.y * sy - 2.5, 5, 5);
+      const dx = d.x * sx;
+      const dy = d.y * sy;
+      ctx.fillStyle = '#ffe49a';
+      ctx.fillRect(dx - 3, dy - 3, 6, 6);
+      ctx.strokeStyle = '#06151a';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(dx - 3, dy - 3, 6, 6);
     }
 
     // boats (local drawn last + ringed so it's always readable)
