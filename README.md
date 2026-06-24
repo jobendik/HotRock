@@ -38,6 +38,13 @@ npm run build
 npm run preview
 ```
 
+## Deploy (GitHub Pages)
+A workflow (`.github/workflows/deploy.yml`) builds and publishes `dist/` to GitHub Pages on every
+push to `main`. **One-time setup:** in the repo, go to **Settings → Pages → Build and deployment →
+Source** and select **GitHub Actions**. The site then publishes to `https://<owner>.github.io/<repo>/`.
+The build uses a **relative base** (`base: './'`), so the same bundle also runs from any subpath
+(itch.io, a CrazyGames CDN slot, etc.) with no config change.
+
 ## Scripts
 | Script | Purpose |
 | --- | --- |

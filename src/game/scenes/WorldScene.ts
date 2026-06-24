@@ -30,6 +30,7 @@ export class WorldScene extends Phaser.Scene {
   private model!: WorldModel;
   private inputCtl!: InputController;
   private running = false;
+  private paused = false;
   private accumulatorMs = 0;
   private localId: PlayerId = 'p0';
   private camZoom = 1;
@@ -71,6 +72,15 @@ export class WorldScene extends Phaser.Scene {
     this.offBus.push(bus.on('intent:requeue', () => this.beginRound()));
     this.offBus.push(bus.on('round:ended', () => this.endRound()));
     this.offBus.push(bus.on('intent:setQuality', ({ level }) => this.setQuality(level)));
+    // Pause/resume (tab hidden on mobile). Reset the accumulator on resume so a
+    // long pause never triggers a catch-up burst of steps.
+    this.offBus.push(bus.on('intent:pause', () => (this.paused = true)));
+    this.offBus.push(
+      bus.on('intent:resume', () => {
+        this.paused = false;
+        this.accumulatorMs = 0;
+      }),
+    );
     // Screen shake on the big moments (skipped under reduced motion).
     this.offBus.push(
       bus.on('player:hit', ({ targetId }) => {
@@ -137,8 +147,14 @@ export class WorldScene extends Phaser.Scene {
 
   private setQuality(level: QualityLevel): void {
     this.quality = level;
-    const wake = level !== 'low';
-    for (const bv of this.boatViews.values()) bv.setWakeEnabled(wake);
+    for (const [id, bv] of this.boatViews) {
+      bv.setWakeEnabled(this.wakeEnabledFor(id === this.localId));
+    }
+  }
+
+  /** high = wake on every boat, medium = local boat only, low = none. */
+  private wakeEnabledFor(isLocal: boolean): boolean {
+    return this.quality === 'high' || (this.quality === 'medium' && isLocal);
   }
 
   private shake(durationMs: number, intensity: number): void {
@@ -148,7 +164,7 @@ export class WorldScene extends Phaser.Scene {
   // ---- main loop ----
 
   override update(time: number, delta: number): void {
-    if (!this.running) return;
+    if (!this.running || this.paused) return;
 
     // Clamp the frame so a long stall can't trigger a step spiral.
     this.accumulatorMs += Math.min(delta, TICK.fixedDtMs * TICK.maxStepsPerFrame);
@@ -221,7 +237,7 @@ export class WorldScene extends Phaser.Scene {
       let bv = this.boatViews.get(boat.id);
       if (!bv) {
         bv = new BoatView(this, boat.color);
-        bv.setWakeEnabled(this.quality !== 'low');
+        bv.setWakeEnabled(this.wakeEnabledFor(boat.id === this.localId));
         this.boatViews.set(boat.id, bv);
       }
       const p = this.prev.get(boat.id);

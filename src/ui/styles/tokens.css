@@ -25,13 +25,29 @@ html,
 body {
   margin: 0;
   height: 100%;
+  /* Lock the page: no pull-to-refresh, rubber-banding, or scroll on mobile. */
+  overscroll-behavior: none;
+  touch-action: none;
 }
 body {
+  position: fixed;
+  inset: 0;
   background: var(--bg);
   color: var(--parch);
   font-family: var(--font-ui);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  /* Game feel: no text selection, callouts, or blue tap highlight. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The Phaser canvas must own its touches (no browser gestures stealing them). */
+#game-root,
+#game-root canvas {
+  touch-action: none;
 }
 
 /* Game canvas sits behind the DOM UI overlay. */

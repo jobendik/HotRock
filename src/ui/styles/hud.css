@@ -341,20 +341,33 @@
   }
 }
 
-.joystick {
+/* The left half of the screen is the floating-joystick touch zone (behind the
+   interactive HUD, which sits at a higher z-index so its taps still register). */
+.joystick-zone {
   position: absolute;
-  left: max(20px, env(safe-area-inset-left));
-  bottom: max(24px, env(safe-area-inset-bottom));
-  width: 150px;
-  height: 150px;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
   pointer-events: auto;
   touch-action: none;
+  z-index: 1;
+}
+.joystick {
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.joystick[hidden] {
+  display: none;
 }
 .joystick__base {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(9, 26, 31, 0.5);
+  background: rgba(9, 26, 31, 0.42);
   border: 2px solid var(--line);
   box-shadow: var(--shadow);
 }
@@ -362,13 +375,24 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 66px;
-  height: 66px;
+  width: 60px;
+  height: 60px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #2c5563, #102830);
   border: 2px solid var(--line);
   box-shadow: var(--shadow);
+}
+
+/* Interactive HUD always sits above the joystick touch zone. */
+.action-buttons,
+.tool-buttons,
+.upgrade-bar,
+.minimap,
+.hud__top,
+.hud__clock,
+.carrier-banner {
+  z-index: 4;
 }
 
 .action-buttons {

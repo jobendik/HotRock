@@ -2,31 +2,36 @@ import { bus } from '@/core/EventBus';
 import { clamp } from '@/core/math';
 
 /**
- * Touch controls (DOM): a left virtual joystick and a right Boost button. Emits
- * `intent:joystick` (normalised −1..1) and `intent:action` so the game's
- * InputController can fold them into the input frame. Shown only on coarse
- * pointers (CSS); desktop drives with the keyboard. No Phaser/game imports.
+ * Touch controls (DOM): a **floating** left-thumb joystick and a right Boost
+ * button. The left half of the screen is a touch zone — press anywhere and the
+ * stick spawns under your thumb and follows it (far better feel than a fixed
+ * stick you have to find). Emits `intent:joystick` (normalised −1..1) and
+ * `intent:action`. Shown only on coarse pointers; desktop uses the keyboard.
+ * No Phaser/game imports.
  */
-const KNOB_RADIUS = 56; // px of knob travel == full deflection
+const KNOB_RADIUS = 60; // px of thumb travel == full deflection
 
 export class MobileControls {
   readonly el: HTMLElement;
-  private readonly base: HTMLElement;
+  private readonly zone: HTMLElement;
+  private readonly stick: HTMLElement;
   private readonly knob: HTMLElement;
   private readonly boostBtn: HTMLButtonElement;
   private readonly boostFill: HTMLElement;
 
   private joyPointer: number | null = null;
-  private baseCx = 0;
-  private baseCy = 0;
+  private originX = 0;
+  private originY = 0;
 
   constructor() {
     this.el = document.createElement('div');
     this.el.className = 'mobile-controls';
     this.el.innerHTML = `
-      <div class="joystick" data-joy>
-        <div class="joystick__base"></div>
-        <div class="joystick__knob" data-knob></div>
+      <div class="joystick-zone" data-zone>
+        <div class="joystick" data-stick hidden>
+          <div class="joystick__base"></div>
+          <div class="joystick__knob" data-knob></div>
+        </div>
       </div>
       <div class="action-buttons">
         <button class="action-btn action-btn--boost" type="button" data-boost aria-label="Boost">
@@ -35,7 +40,8 @@ export class MobileControls {
         </button>
       </div>`;
 
-    this.base = mustQuery(this.el, '[data-joy]');
+    this.zone = mustQuery(this.el, '[data-zone]');
+    this.stick = mustQuery(this.el, '[data-stick]');
     this.knob = mustQuery(this.el, '[data-knob]');
     this.boostBtn = mustQuery<HTMLButtonElement>(this.el, '[data-boost]');
     this.boostFill = mustQuery(this.el, '[data-boost-fill]');
@@ -59,37 +65,38 @@ export class MobileControls {
     const onDown = (e: PointerEvent): void => {
       if (this.joyPointer !== null) return;
       this.joyPointer = e.pointerId;
-      this.base.setPointerCapture(e.pointerId);
-      const r = this.base.getBoundingClientRect();
-      this.baseCx = r.left + r.width / 2;
-      this.baseCy = r.top + r.height / 2;
-      this.moveKnob(e);
+      this.zone.setPointerCapture(e.pointerId);
+      const rect = this.zone.getBoundingClientRect();
+      this.originX = e.clientX - rect.left;
+      this.originY = e.clientY - rect.top;
+      this.stick.style.left = `${this.originX}px`;
+      this.stick.style.top = `${this.originY}px`;
+      this.stick.hidden = false;
+      this.knob.style.transform = 'translate(-50%, -50%)';
     };
     const onMove = (e: PointerEvent): void => {
-      if (e.pointerId === this.joyPointer) this.moveKnob(e);
+      if (e.pointerId !== this.joyPointer) return;
+      const rect = this.zone.getBoundingClientRect();
+      let dx = e.clientX - rect.left - this.originX;
+      let dy = e.clientY - rect.top - this.originY;
+      const m = Math.hypot(dx, dy);
+      if (m > KNOB_RADIUS) {
+        dx = (dx / m) * KNOB_RADIUS;
+        dy = (dy / m) * KNOB_RADIUS;
+      }
+      this.knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      bus.emit('intent:joystick', { x: dx / KNOB_RADIUS, y: dy / KNOB_RADIUS });
     };
     const onUp = (e: PointerEvent): void => {
       if (e.pointerId !== this.joyPointer) return;
       this.joyPointer = null;
-      this.knob.style.transform = 'translate(-50%, -50%)';
+      this.stick.hidden = true;
       bus.emit('intent:joystick', { x: 0, y: 0 });
     };
-    this.base.addEventListener('pointerdown', onDown);
-    this.base.addEventListener('pointermove', onMove);
-    this.base.addEventListener('pointerup', onUp);
-    this.base.addEventListener('pointercancel', onUp);
-  }
-
-  private moveKnob(e: PointerEvent): void {
-    let dx = e.clientX - this.baseCx;
-    let dy = e.clientY - this.baseCy;
-    const m = Math.hypot(dx, dy);
-    if (m > KNOB_RADIUS) {
-      dx = (dx / m) * KNOB_RADIUS;
-      dy = (dy / m) * KNOB_RADIUS;
-    }
-    this.knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    bus.emit('intent:joystick', { x: dx / KNOB_RADIUS, y: dy / KNOB_RADIUS });
+    this.zone.addEventListener('pointerdown', onDown);
+    this.zone.addEventListener('pointermove', onMove);
+    this.zone.addEventListener('pointerup', onUp);
+    this.zone.addEventListener('pointercancel', onUp);
   }
 
   private bindBoost(): void {

@@ -1,6 +1,6 @@
 import { bus } from '@/core/EventBus';
 import { clamp } from '@/core/math';
-import type { Settings } from '@/core/types';
+import type { Settings, QualityLevel } from '@/core/types';
 
 /**
  * Persisted user settings (localStorage). On change it saves and re-broadcasts
@@ -14,10 +14,16 @@ type Listener = (s: Settings) => void;
 const listeners = new Set<Listener>();
 let state: Settings = load();
 
+/** Touch devices default to medium quality (fewer particles) for smoother FPS. */
+function defaultQuality(): QualityLevel {
+  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  return coarse ? 'medium' : 'high';
+}
+
 function load(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return { ...DEFAULTS };
+    if (!raw) return { ...DEFAULTS, quality: defaultQuality() };
     const p = JSON.parse(raw) as Partial<Settings>;
     return {
       sound: typeof p.sound === 'boolean' ? p.sound : DEFAULTS.sound,
