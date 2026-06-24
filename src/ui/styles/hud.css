@@ -37,6 +37,44 @@
   text-align: right;
 }
 
+/* ---- Round clock + heat (top-center) ---- */
+.hud__clock {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.clock {
+  padding: 4px 14px;
+  background: rgba(14, 34, 39, 0.82);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+}
+.clock.is-urgent {
+  color: var(--crimson);
+  border-color: var(--crimson);
+}
+.heat {
+  width: 120px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.heat__fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--crimson));
+  transition: width 0.3s ease;
+}
+
 /* ---- Minimap (top-right) ---- */
 .minimap {
   position: absolute;
@@ -210,7 +248,7 @@
 /* ---- Carrier banner (top-center) ---- */
 .carrier-banner {
   position: absolute;
-  top: max(12px, env(safe-area-inset-top));
+  top: 64px;
   left: 50%;
   transform: translateX(-50%);
   display: inline-flex;
@@ -254,7 +292,7 @@
 /* ---- Toasts (top-center) ---- */
 .toasts {
   position: absolute;
-  top: 64px;
+  top: 108px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;

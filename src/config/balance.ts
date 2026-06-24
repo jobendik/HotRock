@@ -144,6 +144,12 @@ export const BOTS = {
   reactionMs: 220, // decision latency so bots feel human
   aimJitterDeg: 8,
   ditherChance: 0.08, // occasional sub-optimal move
+  // Behaviour tuning (M5):
+  leadTime: 0.6, // seconds of carrier velocity to lead when intercepting
+  stealRange: 220, // switch INTERCEPT → STEAL within this distance of the carrier
+  fleeRange: 240, // the carrier evades threats within this distance
+  avoidRange: 90, // island-avoidance look-ahead padding
+  prospectSlowRadius: 150, // ease the throttle when approaching a dig site
 } as const;
 
 export const ROUND = {
@@ -158,7 +164,7 @@ export const ROUND = {
   hintsStartMs: 60_000, // minimap edge hints toward the Rock site begin
   revealPulseAfterMs: 120_000,
   revealPulseEveryMs: 20_000, // pulse the Rock's location after the threshold
-  autoSurfaceAtMs: 180_000, // if still undug, the Rock surfaces so a finish always happens
+  autoSurfaceAtMs: 150_000, // if still undug, surface it ~30s before time so a chase always happens
 } as const;
 
 export const ECONOMY = {

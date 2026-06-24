@@ -238,8 +238,8 @@ export class WorldScene extends Phaser.Scene {
       rockFound: rock.found,
       carrierName: carrier?.name ?? null,
       dockArrowDeg: local.carrying ? this.bearingToNearestDock(local.x, local.y) : null,
-      timeLeftMs: 0,
-      heat: 0,
+      timeLeftMs: Math.max(0, this.roundConfig.durationMs - view.timeMs),
+      heat: view.heat,
     });
   }
 
@@ -263,7 +263,11 @@ export class WorldScene extends Phaser.Scene {
       })),
       sites: view.sites.map((s) => ({ id: s.id, x: s.x, y: s.y, dug: s.dug })),
       docks: DOCKS.map((d) => ({ x: d.x, y: d.y })),
-      rock: rock.found ? { x: rock.x, y: rock.y, carried: rock.carrierId !== null } : null,
+      // Show the Rock once surfaced, or hinted on the minimap late-game.
+      rock:
+        rock.found || view.rockHinted
+          ? { x: rock.x, y: rock.y, carried: rock.carrierId !== null }
+          : null,
       storm: null,
       worldW: view.width,
       worldH: view.height,

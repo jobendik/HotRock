@@ -121,12 +121,55 @@ export interface WorldState {
   /** Monotonic id source for pickups. */
   nextPickupId: number;
   rock: Rock;
+  /** Global urgency 0..1, interpolated from the heat schedule. */
+  heat: number;
+  /** Once true, the Rock's location is hinted on the minimap (pre-find). */
+  rockHinted: boolean;
+  /** Sim time of the last reveal pulse (ms). */
+  lastRevealPulseMs: number;
   /** Set true once the round has been decided; the sim then idles. */
   over: boolean;
 }
 
 /** Player palette — also surfaced to the minimap. Index 0 is the local player. */
 export const PLAYER_COLORS = ['#ef6f53', '#4f9bf0', '#38c98b', '#c77dff'] as const;
+
+/** Flavour names for the backfill bots. */
+export const BOT_NAMES = [
+  'Maelle',
+  'Drake',
+  'Calico',
+  'Reef',
+  'Sable',
+  'Marlow',
+  'Cutter',
+  'Brine',
+  'Tasha',
+  'Onyx',
+  'Vesper',
+  'Coral',
+  'Flint',
+  'Mako',
+] as const;
+
+/** Deterministic, evenly-spread bot colour by index (golden-angle hue). */
+export function botColor(i: number): string {
+  const hue = (i * 137.508) % 360;
+  return hslToHex(hue, 62, 60);
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const sl = s / 100;
+  const ll = l / 100;
+  const k = (n: number): number => (n + h / 30) % 12;
+  const a = sl * Math.min(ll, 1 - ll);
+  const f = (n: number): number => {
+    const c = ll - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return Math.round(255 * c);
+  };
+  const hex = (v: number): string => v.toString(16).padStart(2, '0');
+  return `#${hex(f(0))}${hex(f(8))}${hex(f(4))}`;
+}
 
 /** Construct a boat at rest, facing "up" (−y), with a full boost meter. */
 export function makeBoat(

@@ -2,13 +2,14 @@ import type { EventSink } from '@/core/events';
 import type { InputFrame, PlayerId, RoundConfig } from '@/core/types';
 import { Rng } from '@/core/rng';
 import { WORLD } from '@/config/balance';
-import { type WorldState, type Boat, makeBoat, PLAYER_COLORS } from '@/sim/WorldState';
-import { generateIslands, generateSites } from '@/sim/worldgen';
+import { type WorldState, type Boat, makeBoat, PLAYER_COLORS, BOT_NAMES, botColor } from '@/sim/WorldState';
+import { generateIslands, generateSites, botSpawns } from '@/sim/worldgen';
 import { stepEconomy } from '@/sim/systems/economy';
 import { stepMovement } from '@/sim/systems/movement';
 import { stepDigging } from '@/sim/systems/digging';
 import { stepPickups } from '@/sim/systems/pickups';
 import { stepCarry } from '@/sim/systems/carry';
+import { stepRound } from '@/sim/systems/round';
 
 const LOCAL_ID: PlayerId = 'p0';
 
@@ -32,11 +33,18 @@ export class GameSim {
     const spawnY = WORLD.height / 2;
     const islands = generateIslands(rng, spawnX, spawnY);
     const sites = generateSites(rng, islands, spawnX, spawnY);
-    const player: Boat = makeBoat(LOCAL_ID, 'You', false, spawnX, spawnY, PLAYER_COLORS[0]);
 
     // Bury the Rock at exactly one random site (never via the loot table).
     const rockSite = sites.length > 0 ? (sites[rng.int(sites.length)] ?? null) : null;
     if (rockSite) rockSite.reward = { kind: 'rock' };
+
+    const boats: Boat[] = [makeBoat(LOCAL_ID, 'You', false, spawnX, spawnY, PLAYER_COLORS[0])];
+    const spawns = botSpawns(rng, config.botCount, islands, { x: spawnX, y: spawnY });
+    for (let i = 0; i < config.botCount; i++) {
+      const s = spawns[i] ?? { x: spawnX, y: spawnY };
+      const name = BOT_NAMES[i % BOT_NAMES.length] ?? `Bot ${i + 1}`;
+      boats.push(makeBoat(`bot${i}`, name, true, s.x, s.y, botColor(i)));
+    }
 
     this.state = {
       seed,
@@ -45,7 +53,7 @@ export class GameSim {
       height: WORLD.height,
       timeMs: 0,
       localId: LOCAL_ID,
-      boats: [player],
+      boats,
       islands,
       sites,
       pickups: [],
@@ -60,13 +68,16 @@ export class GameSim {
         extractMs: 0,
         siteId: rockSite?.id ?? null,
       },
+      heat: 0,
+      rockHinted: false,
+      lastRevealPulseMs: 0,
       over: false,
     };
 
     this.sink.emit('round:started', {
       durationMs: config.durationMs,
       seed,
-      playerCount: config.playerCount,
+      playerCount: boats.length,
     });
   }
 
@@ -75,6 +86,8 @@ export class GameSim {
     if (this.state.over) return; // round decided; idle until the next start()
     const dt = dtMs / 1000;
     this.state.timeMs += dtMs;
+    stepRound(this.state, dt, this.sink); // heat, hints/pulses, auto-surface, timeout
+    if (this.state.over) return;
     stepEconomy(this.state, inputs, dt, this.sink);
     stepMovement(this.state, inputs, dt);
     stepDigging(this.state, dt, this.sink);
@@ -109,6 +122,9 @@ export class GameSim {
         extractMs: 0,
         siteId: null,
       },
+      heat: 0,
+      rockHinted: false,
+      lastRevealPulseMs: 0,
       over: false,
     };
   }

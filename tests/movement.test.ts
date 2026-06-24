@@ -29,10 +29,11 @@ describe('GameSim.start', () => {
     sim.start(123, CFG);
 
     const started = sink.events.find((e) => e.name === 'round:started');
-    expect(started?.payload).toMatchObject({ seed: 123, playerCount: 1 });
+    expect(started?.payload).toMatchObject({ seed: 123, playerCount: 1 + CFG.botCount });
 
     const state = sim.getState();
-    expect(state.boats).toHaveLength(1);
+    expect(state.boats).toHaveLength(1 + CFG.botCount);
+    expect(state.boats.filter((b) => b.isBot)).toHaveLength(CFG.botCount);
     expect(state.islands.length).toBeGreaterThan(0);
   });
 

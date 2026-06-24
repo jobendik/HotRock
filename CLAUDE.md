@@ -56,4 +56,4 @@ typecheck + lint + test pass · `dev` runs · no new `any` · all gameplay numbe
 - `docs/CONVENTIONS.md` — coding standards & patterns.
 
 ## Current status
-> Keep this line current as you progress. **Milestone: M4 complete — the Hot Rock in `sim/systems/carry`: dig to surface → glow + light pillar (RockView) → permanent minimap beacon → carrier banner + rotating dock arrow. Steal-by-ram (relative approach speed, easier with Net), drop + lockout + scatter, pickup (picked vs STOLEN), dock extraction → win (round:ended + results). Carrier speed tax. Next: M5 — bots + round + heat.**
+> Keep this line current as you progress. **Milestone: M5 complete — full loop playable vs 8 bots. Pure `sim/BotAI` (PROSPECT/INTERCEPT/STEAL/CARRY_RUN/FLEE, reaction jitter + dither, island avoidance, buys engine/net/smoke) driven from `LocalWorldModel`; `sim/systems/round` (heat curve, minimap hints, reveal pulses, late auto-surface, timeout win). HUD round clock + heat meter. Integration test runs a whole round to resolution. Next: M6 — results + requeue + polish + docs.**

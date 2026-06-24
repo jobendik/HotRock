@@ -43,6 +43,9 @@ export function makeWorld(boats: Boat[], patch: WorldPatch = {}): WorldState {
       extractMs: 0,
       siteId: null,
     },
+    heat: 0,
+    rockHinted: false,
+    lastRevealPulseMs: 0,
     over: false,
     ...rest,
   };

@@ -21,6 +21,8 @@ export class Hud {
   private readonly banner = new CarrierBanner();
   private readonly cashValue: HTMLElement;
   private readonly digRing: HTMLElement;
+  private readonly timeValue: HTMLElement;
+  private readonly heatFill: HTMLElement;
 
   private unsub: (() => void) | undefined;
   private shownCash = 0;
@@ -37,12 +39,18 @@ export class Hud {
           <span class="stat__icon">◈</span><span class="stat__value" data-cash>0</span>
         </div>
       </div>
+      <div class="hud__clock">
+        <div class="clock" data-time>3:00</div>
+        <div class="heat" title="Heat"><div class="heat__fill" data-heat></div></div>
+      </div>
       <div class="dig-ring" data-dig hidden>
         <div class="dig-ring__inner">Digging…</div>
       </div>`;
 
     this.cashValue = mustQuery(this.el, '[data-cash]');
     this.digRing = mustQuery(this.el, '[data-dig]');
+    this.timeValue = mustQuery(this.el, '[data-time]');
+    this.heatFill = mustQuery(this.el, '[data-heat]');
 
     this.banner.mount(this.el);
     this.minimap.mount(this.el);
@@ -87,6 +95,10 @@ export class Hud {
     const digging = s.digProgress > 0;
     this.digRing.hidden = !digging;
     if (digging) this.digRing.style.setProperty('--p', s.digProgress.toFixed(3));
+
+    this.timeValue.textContent = formatTime(s.timeLeftMs);
+    this.timeValue.classList.toggle('is-urgent', s.timeLeftMs <= 30_000);
+    this.heatFill.style.width = `${Math.round(s.heat * 100)}%`;
   }
 
   /** Ease the displayed cash toward the target so gains "count up". */
@@ -104,6 +116,13 @@ export class Hud {
     };
     this.cashRaf = requestAnimationFrame(tick);
   }
+}
+
+function formatTime(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function mustQuery<T extends HTMLElement = HTMLElement>(root: HTMLElement, sel: string): T {

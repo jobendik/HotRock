@@ -1,6 +1,6 @@
 import type { Rng } from '@/core/rng';
-import { dist } from '@/core/math';
-import { WORLD, ISLANDS, DOCKS, DIG_SITES, DIG, LOOT_TABLE } from '@/config/balance';
+import { dist, type Vec2 } from '@/core/math';
+import { WORLD, ISLANDS, DOCKS, DIG_SITES, DIG, LOOT_TABLE, BOAT } from '@/config/balance';
 import type { Island, DigSite } from '@/sim/WorldState';
 
 /**
@@ -61,4 +61,26 @@ export function generateSites(
     sites.push({ id: `site-${sites.length}`, x, y, dug: false, reward });
   }
   return sites;
+}
+
+/** Scatter `count` bot spawn points on open water, spread out from the player. */
+export function botSpawns(rng: Rng, count: number, islands: Island[], avoid: Vec2): Vec2[] {
+  const spawns: Vec2[] = [];
+  const margin = ISLANDS.edgeMargin;
+  const maxAttempts = count * 60;
+  let attempts = 0;
+  while (spawns.length < count && attempts < maxAttempts) {
+    attempts++;
+    const x = rng.range(margin, WORLD.width - margin);
+    const y = rng.range(margin, WORLD.height - margin);
+    if (dist(x, y, avoid.x, avoid.y) < 500) continue;
+    if (islands.some((i) => dist(x, y, i.x, i.y) < i.radius + BOAT.radius * 2)) continue;
+    if (spawns.some((s) => dist(x, y, s.x, s.y) < 200)) continue;
+    spawns.push({ x, y });
+  }
+  // Top up anywhere valid if rejection sampling fell short.
+  while (spawns.length < count) {
+    spawns.push({ x: rng.range(margin, WORLD.width - margin), y: rng.range(margin, WORLD.height - margin) });
+  }
+  return spawns;
 }

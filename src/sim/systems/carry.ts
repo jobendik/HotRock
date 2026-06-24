@@ -36,6 +36,24 @@ export function stepCarry(state: WorldState, dt: number, sink: EventSink): void 
   }
 }
 
+/** Time ran out without anyone digging it: surface the Rock LOOSE for a final scramble. */
+export function autoSurfaceRock(state: WorldState, sink: EventSink): void {
+  const rock = state.rock;
+  if (rock.found) return;
+  if (rock.siteId) {
+    const site = state.sites.find((s) => s.id === rock.siteId);
+    if (site) site.dug = true;
+  }
+  rock.found = true;
+  rock.siteId = null;
+  rock.carrierId = null;
+  rock.lastCarrierId = null;
+  rock.extractMs = 0;
+  // x/y already hold the buried site position.
+  sink.emit('rock:found', { byId: '', worldX: rock.x, worldY: rock.y });
+  sink.emit('toast', { kind: 'epic', text: 'The Rock surfaced!' });
+}
+
 /** Called by the digging system when a Rock-reward site completes: the digger carries it. */
 export function surfaceRock(state: WorldState, digger: Boat, sink: EventSink): void {
   const rock = state.rock;
