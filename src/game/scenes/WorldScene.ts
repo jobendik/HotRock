@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { bus } from '@/core/EventBus';
 import { uiStore, minimap } from '@/core/store';
 import { clamp, lerp, lerpAngle } from '@/core/math';
-import type { PlayerId, RoundConfig, MinimapSnapshot } from '@/core/types';
+import type { PlayerId, RoundConfig, MinimapSnapshot, QualityLevel } from '@/core/types';
 import { WORLD, ROUND, TICK, CAMERA, BOTS, DIG, DOCKS } from '@/config/balance';
 import { LocalWorldModel } from '@/game/world/LocalWorldModel';
 import type { WorldModel, WorldView } from '@/game/world/WorldModel';
@@ -35,6 +35,8 @@ export class WorldScene extends Phaser.Scene {
   private camZoom = 1;
   private lastHudPushMs = 0;
   private lastMiniPushMs = 0;
+  private quality: QualityLevel = 'high';
+  private reducedMotion = false;
   private readonly offBus: Array<() => void> = [];
 
   private readonly boatViews = new Map<PlayerId, BoatView>();
@@ -61,8 +63,21 @@ export class WorldScene extends Phaser.Scene {
     this.model = new LocalWorldModel(bus);
     this.inputCtl = new InputController();
 
+    this.reducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     this.offBus.push(bus.on('intent:startRound', () => this.beginRound()));
+    this.offBus.push(bus.on('intent:requeue', () => this.beginRound()));
     this.offBus.push(bus.on('round:ended', () => this.endRound()));
+    this.offBus.push(bus.on('intent:setQuality', ({ level }) => this.setQuality(level)));
+    // Screen shake on the big moments (skipped under reduced motion).
+    this.offBus.push(
+      bus.on('player:hit', ({ targetId }) => {
+        if (this.running && targetId === this.localId) this.shake(220, 0.012);
+      }),
+    );
+    this.offBus.push(bus.on('rock:found', () => this.shake(350, 0.008)));
     // Floating "+N" at the world position of a local gem pickup (juice).
     this.offBus.push(
       bus.on('gem:collected', ({ value, worldX, worldY }) => {
@@ -118,6 +133,16 @@ export class WorldScene extends Phaser.Scene {
   private endRound(): void {
     this.running = false;
     this.cameras.main.stopFollow();
+  }
+
+  private setQuality(level: QualityLevel): void {
+    this.quality = level;
+    const wake = level !== 'low';
+    for (const bv of this.boatViews.values()) bv.setWakeEnabled(wake);
+  }
+
+  private shake(durationMs: number, intensity: number): void {
+    if (this.running && !this.reducedMotion) this.cameras.main.shake(durationMs, intensity);
   }
 
   // ---- main loop ----
@@ -196,6 +221,7 @@ export class WorldScene extends Phaser.Scene {
       let bv = this.boatViews.get(boat.id);
       if (!bv) {
         bv = new BoatView(this, boat.color);
+        bv.setWakeEnabled(this.quality !== 'low');
         this.boatViews.set(boat.id, bv);
       }
       const p = this.prev.get(boat.id);

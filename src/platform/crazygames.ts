@@ -9,9 +9,11 @@
  * M0 ships the seam + no-op fallback. The ad call-sites land in M6.
  */
 
-export type AdType = 'midgame' | 'rewarded';
+import type { AdType, GameServices } from '@/core/types';
 
-export interface PlatformAdapter {
+export type { AdType };
+
+export interface PlatformAdapter extends GameServices {
   /** True when the real CrazyGames SDK is driving (false = no-op fallback). */
   readonly available: boolean;
   /** Load + initialise the SDK. Always resolves, even when the SDK is absent. */

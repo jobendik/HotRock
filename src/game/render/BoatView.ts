@@ -19,6 +19,7 @@ export class BoatView {
   readonly root: Phaser.GameObjects.Container;
   private readonly hull: Phaser.GameObjects.Image;
   private readonly wake: Phaser.GameObjects.Particles.ParticleEmitter;
+  private wakeEnabled = true;
 
   constructor(scene: Phaser.Scene, color: string) {
     const tint = colorToInt(color);
@@ -55,7 +56,13 @@ export class BoatView {
     const sternX = x - Math.cos(angle) * BOAT.radius;
     const sternY = y - Math.sin(angle) * BOAT.radius;
     this.wake.setPosition(sternX, sternY);
-    this.wake.emitting = speed > WAKE_SPEED_MIN;
+    this.wake.emitting = this.wakeEnabled && speed > WAKE_SPEED_MIN;
+  }
+
+  /** Low quality disables the wake particles. */
+  setWakeEnabled(enabled: boolean): void {
+    this.wakeEnabled = enabled;
+    if (!enabled) this.wake.emitting = false;
   }
 
   destroy(): void {

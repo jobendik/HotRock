@@ -412,3 +412,35 @@
   filter: brightness(1.2);
   transform: scale(0.96);
 }
+
+/* ---- Mobile layout pass ---- */
+@media (max-width: 560px) {
+  .minimap canvas {
+    width: 120px;
+    height: 90px;
+  }
+  .stat {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .clock {
+    font-size: 15px;
+  }
+  .up {
+    min-width: 56px;
+    padding: 6px 8px 5px;
+  }
+  .carrier-banner {
+    font-size: 13px;
+    padding: 7px 12px;
+  }
+  .tool-buttons {
+    bottom: 200px;
+  }
+}
+@media (max-height: 480px) {
+  /* Landscape phones: keep the upgrade bar clear of the thumbsticks. */
+  .upgrade-bar {
+    padding: 6px;
+  }
+}

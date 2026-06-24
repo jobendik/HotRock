@@ -5,6 +5,26 @@
 
 export type PlayerId = string;
 
+export type AdType = 'midgame' | 'rewarded';
+
+/**
+ * The slice of the platform the UI is allowed to call (ads + gameplay lifecycle).
+ * Defined in core so `ui/` never imports `platform/`; main.ts passes the concrete
+ * CrazyGames adapter, which satisfies this structurally.
+ */
+export interface GameServices {
+  requestAd(type: AdType): Promise<boolean>;
+  gameplayStart(): void;
+  gameplayStop(): void;
+}
+
+/** Persisted user settings. */
+export interface Settings {
+  sound: boolean;
+  volume: number; // 0..1
+  quality: QualityLevel;
+}
+
 export type ToolId = 'boost' | 'net' | 'smoke' | 'radar';
 /** Purchasable consumable tools (everything except the core Boost meter). */
 export type ConsumableToolId = Exclude<ToolId, 'boost'>;
