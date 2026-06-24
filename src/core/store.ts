@@ -37,8 +37,12 @@ export const uiStore = createStore<HudSnapshot>({
   cash: 0,
   speedTier: 0,
   boostCharge: 1,
+  digProgress: 0,
   tools: [],
   carrying: false,
+  rockFound: false,
+  carrierName: null,
+  dockArrowDeg: null,
   timeLeftMs: 0,
   heat: 0,
 });

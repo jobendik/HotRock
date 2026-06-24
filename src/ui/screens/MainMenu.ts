@@ -5,10 +5,15 @@ import { bus } from '@/core/EventBus';
  * "Settings" are stubbed here in M0 and fleshed out in M6. No Phaser, no
  * game/sim imports — this screen only speaks the event contract.
  */
+export interface MainMenuHandlers {
+  onHowTo: () => void;
+  onSettings: () => void;
+}
+
 export class MainMenu {
   readonly el: HTMLElement;
 
-  constructor() {
+  constructor(handlers: MainMenuHandlers) {
     this.el = document.createElement('div');
     this.el.className = 'screen menu';
     this.el.innerHTML = `
@@ -25,6 +30,10 @@ export class MainMenu {
     this.el.querySelector('[data-action="play"]')?.addEventListener('click', () => {
       bus.emit('intent:startRound');
     });
+    this.el.querySelector('[data-action="how"]')?.addEventListener('click', () => handlers.onHowTo());
+    this.el
+      .querySelector('[data-action="settings"]')
+      ?.addEventListener('click', () => handlers.onSettings());
   }
 
   mount(parent: HTMLElement): void {

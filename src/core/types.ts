@@ -5,7 +5,29 @@
 
 export type PlayerId = string;
 
+export type AdType = 'midgame' | 'rewarded';
+
+/**
+ * The slice of the platform the UI is allowed to call (ads + gameplay lifecycle).
+ * Defined in core so `ui/` never imports `platform/`; main.ts passes the concrete
+ * CrazyGames adapter, which satisfies this structurally.
+ */
+export interface GameServices {
+  requestAd(type: AdType): Promise<boolean>;
+  gameplayStart(): void;
+  gameplayStop(): void;
+}
+
+/** Persisted user settings. */
+export interface Settings {
+  sound: boolean;
+  volume: number; // 0..1
+  quality: QualityLevel;
+}
+
 export type ToolId = 'boost' | 'net' | 'smoke' | 'radar';
+/** Purchasable consumable tools (everything except the core Boost meter). */
+export type ConsumableToolId = Exclude<ToolId, 'boost'>;
 export type UpgradeId = 'speed' | 'boostRefill' | 'net' | 'smoke' | 'radar';
 export type QualityLevel = 'low' | 'medium' | 'high';
 export type ToastKind = 'info' | 'good' | 'bad' | 'epic';
@@ -40,7 +62,8 @@ export interface RoundConfig {
 export interface ToolState {
   id: ToolId;
   count: number; // remaining one-shot charges (boost uses the charge meter instead)
-  ready: boolean; // off-cooldown / usable now
+  ready: boolean; // owned + not currently active → usable now
+  activeMsLeft: number; // >0 while the tool's window is open
 }
 
 /** UI-facing HUD snapshot. Pushed ~12–15Hz via the store — never every frame. */
@@ -48,8 +71,12 @@ export interface HudSnapshot {
   cash: number;
   speedTier: number;
   boostCharge: number; // 0..1
+  digProgress: number; // 0..1 (0 = not digging) — drives the radial dig ring
   tools: ToolState[];
   carrying: boolean; // is the LOCAL player holding the Rock?
+  rockFound: boolean; // has the Rock surfaced?
+  carrierName: string | null; // current carrier's name (null = loose/unfound)
+  dockArrowDeg: number | null; // screen-space bearing to nearest dock while carrying
   timeLeftMs: number;
   heat: number; // 0..1
 }

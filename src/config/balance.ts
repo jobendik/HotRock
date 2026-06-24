@@ -10,6 +10,28 @@ export const WORLD = {
   width: 4000,
   height: 3000,
   wallPadding: 120, // soft bounce margin at the edges
+  wallSpring: 9, // inward acceleration/sec applied within the padding band
+} as const;
+
+/** Fixed-timestep simulation clock. Fixed dt + seeded RNG ⇒ deterministic rounds. */
+export const TICK = {
+  fixedDtMs: 1000 / 60,
+  maxStepsPerFrame: 5, // spiral-of-death guard when a frame stalls
+} as const;
+
+export const MOVEMENT = {
+  joystickDeadzone: 0.12, // ignore tiny stick noise so the boat holds heading
+} as const;
+
+/** Procedural island colliders (circles), generated from the round seed. */
+export const ISLANDS = {
+  count: 14,
+  minRadius: 70,
+  maxRadius: 180,
+  edgeMargin: 200, // keep islands off the very edges
+  minGap: 90, // minimum open water between two islands
+  dockClearance: 260, // keep docks approachable
+  spawnClearance: 340, // keep the player's spawn clear
 } as const;
 
 export const CAMERA = {
@@ -27,6 +49,7 @@ export const BOAT = {
   radius: 26, // collision circle
   hitKnockback: 260,
   bobAmplitude: 2,
+  knockbackFriction: 0.08, // external impulse (trap/ram) retains this fraction per second
 } as const;
 
 export const BOOST = {
@@ -59,6 +82,13 @@ export const TRAP = {
   scatterValue: 60,
 } as const;
 
+/** Loose gems in the water (from traps now; from Rock drops in M4). */
+export const PICKUP = {
+  gemRadius: 44, // auto-collect radius when a boat drives over a loose gem
+  friction: 0.05, // scattered gems retain this fraction of speed per second (settle fast)
+  scatterSpeed: 150, // initial fly-out speed of scattered gems
+} as const;
+
 export const UPGRADES: Record<UpgradeId, { cost: number | readonly number[]; label: string }> = {
   speed: { cost: [200, 400, 700], label: 'Engine' }, // 3 tiers
   boostRefill: { cost: 150, label: 'Refuel Boost' },
@@ -82,6 +112,7 @@ export const ROCK = {
   pickupRadius: 50,
   stealSpeed: 180, // min relative approach speed to knock it loose by ramming
   stealSpeedWithNet: 110, // easier if the rammer has a Net active
+  stealContactPad: 10, // ram counts as contact within 2*BOAT.radius + this
   dropLockoutMs: 200, // brief no-pickup window after a drop
   dropScatter: 36, // px the Rock skitters when dropped
 } as const;
@@ -113,6 +144,12 @@ export const BOTS = {
   reactionMs: 220, // decision latency so bots feel human
   aimJitterDeg: 8,
   ditherChance: 0.08, // occasional sub-optimal move
+  // Behaviour tuning (M5):
+  leadTime: 0.6, // seconds of carrier velocity to lead when intercepting
+  stealRange: 220, // switch INTERCEPT → STEAL within this distance of the carrier
+  fleeRange: 240, // the carrier evades threats within this distance
+  avoidRange: 90, // island-avoidance look-ahead padding
+  prospectSlowRadius: 150, // ease the throttle when approaching a dig site
 } as const;
 
 export const ROUND = {
@@ -127,7 +164,7 @@ export const ROUND = {
   hintsStartMs: 60_000, // minimap edge hints toward the Rock site begin
   revealPulseAfterMs: 120_000,
   revealPulseEveryMs: 20_000, // pulse the Rock's location after the threshold
-  autoSurfaceAtMs: 180_000, // if still undug, the Rock surfaces so a finish always happens
+  autoSurfaceAtMs: 150_000, // if still undug, surface it ~30s before time so a chase always happens
 } as const;
 
 export const ECONOMY = {

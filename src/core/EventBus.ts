@@ -1,9 +1,6 @@
-import type { Events } from '@/core/events';
+import type { Events, VoidKeys } from '@/core/events';
 
 type Handler<T> = (payload: T) => void;
-
-/** Event names whose payload is `void` (can be emitted with no second argument). */
-type VoidKeys = { [K in keyof Events]: Events[K] extends void ? K : never }[keyof Events];
 
 /**
  * The ONLY channel between the UI layer (DOM) and the game layer (Phaser/sim).

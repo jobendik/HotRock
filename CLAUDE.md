@@ -56,4 +56,4 @@ typecheck + lint + test pass · `dev` runs · no new `any` · all gameplay numbe
 - `docs/CONVENTIONS.md` — coding standards & patterns.
 
 ## Current status
-> Keep this line current as you progress. **Milestone: M0 complete — scaffolding done (layers, event contract, platform stub, Phaser boots a blank WorldScene, DOM Main Menu emits `intent:startRound`). Next: M1 — boat + world + camera + input.**
+> Keep this line current as you progress. **Vertical slice COMPLETE — M0–M6 all landed and playable vs 8 bots.** M6 added: Results screen (winner + your run + rewarded double-payout) and Play Again/requeue, Settings (sound/volume/quality, persisted), zero-asset WebAudio SFX, screen shake + `prefers-reduced-motion`, mobile layout pass, ad hooks via a `GameServices` seam (ui never imports platform), and a UI/layer-decoupling test. 51 Vitest tests; typecheck + lint + test + build + dev all green. **Next: P7 — authoritative multiplayer per `docs/NETCODE.md`.**
