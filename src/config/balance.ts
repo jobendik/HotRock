@@ -112,6 +112,7 @@ export const ROCK = {
   pickupRadius: 50,
   stealSpeed: 180, // min relative approach speed to knock it loose by ramming
   stealSpeedWithNet: 110, // easier if the rammer has a Net active
+  stealContactPad: 10, // ram counts as contact within 2*BOAT.radius + this
   dropLockoutMs: 200, // brief no-pickup window after a drop
   dropScatter: 36, // px the Rock skitters when dropped
 } as const;

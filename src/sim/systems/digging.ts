@@ -3,6 +3,7 @@ import { dist, TAU } from '@/core/math';
 import { Rng } from '@/core/rng';
 import { DIG, TRAP, PICKUP } from '@/config/balance';
 import type { WorldState, Boat, DigSite } from '@/sim/WorldState';
+import { surfaceRock } from '@/sim/systems/carry';
 
 /**
  * Digging: auto-prompt within `DIG.radius` of an undug site; staying in range
@@ -85,7 +86,7 @@ function applyReward(
       applyTrap(state, boat, site);
       break;
     case 'rock':
-      // Owned by the carry system (M4); reward application happens there.
+      surfaceRock(state, boat, sink); // the digger becomes the carrier
       break;
     case 'none':
       break;

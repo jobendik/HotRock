@@ -207,6 +207,50 @@
   border-radius: 999px;
 }
 
+/* ---- Carrier banner (top-center) ---- */
+.carrier-banner {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 92vw;
+  padding: 9px 18px;
+  background: rgba(14, 34, 39, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.carrier-banner[hidden] {
+  display: none;
+}
+.carrier-banner.is-mine {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow:
+    var(--shadow),
+    0 0 18px rgba(240, 194, 74, 0.35);
+}
+.carrier-banner__gem {
+  font-size: 18px;
+}
+.carrier-banner__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.carrier-banner__arrow {
+  display: inline-block;
+  color: var(--gold);
+  font-size: 18px;
+}
+.carrier-banner__arrow[hidden] {
+  display: none;
+}
+
 /* ---- Toasts (top-center) ---- */
 .toasts {
   position: absolute;

@@ -75,6 +75,16 @@ export class Minimap {
     }
     const me = snap.boats.find((b) => b.isLocal);
     if (me) this.dot(me.x * sx, me.y * sy, me.color, 3, true);
+
+    // the Rock — a pulsing gold beacon, always visible once surfaced
+    if (snap.rock) {
+      const t = (Date.now() % 1000) / 1000;
+      const r = 3 + Math.sin(t * Math.PI * 2) * 1.5;
+      ctx.fillStyle = '#ffd76a';
+      ctx.beginPath();
+      ctx.arc(snap.rock.x * sx, snap.rock.y * sy, r, 0, TAU);
+      ctx.fill();
+    }
   }
 
   private dot(x: number, y: number, color: string, r: number, ring: boolean): void {

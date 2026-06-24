@@ -56,4 +56,4 @@ typecheck + lint + test pass · `dev` runs · no new `any` · all gameplay numbe
 - `docs/CONVENTIONS.md` — coding standards & patterns.
 
 ## Current status
-> Keep this line current as you progress. **Milestone: M3 complete — DOM upgrade bar (buy/affordability/engine tier badge), Engine tiers + Refuel applied in `sim/systems/economy`, Net/Smoke/Radar consumables with active windows + tool-use buttons, Sonar ping toast, one-shot commands routed once-per-fixed-step via the input frame, toasts. Next: M4 — the Hot Rock (hot potato).**
+> Keep this line current as you progress. **Milestone: M4 complete — the Hot Rock in `sim/systems/carry`: dig to surface → glow + light pillar (RockView) → permanent minimap beacon → carrier banner + rotating dock arrow. Steal-by-ram (relative approach speed, easier with Net), drop + lockout + scatter, pickup (picked vs STOLEN), dock extraction → win (round:ended + results). Carrier speed tax. Next: M5 — bots + round + heat.**

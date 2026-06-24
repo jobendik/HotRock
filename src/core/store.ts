@@ -40,6 +40,9 @@ export const uiStore = createStore<HudSnapshot>({
   digProgress: 0,
   tools: [],
   carrying: false,
+  rockFound: false,
+  carrierName: null,
+  dockArrowDeg: null,
   timeLeftMs: 0,
   heat: 0,
 });

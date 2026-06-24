@@ -4,6 +4,7 @@ import { MobileControls } from '@/ui/hud/MobileControls';
 import { Minimap } from '@/ui/hud/Minimap';
 import { UpgradeBar } from '@/ui/hud/UpgradeBar';
 import { ToolButtons } from '@/ui/hud/ToolButtons';
+import { CarrierBanner } from '@/ui/hud/CarrierBanner';
 
 /**
  * In-round HUD overlay (DOM). Subscribes to the throttled store snapshot and
@@ -17,6 +18,7 @@ export class Hud {
   private readonly minimap = new Minimap();
   private readonly upgrades = new UpgradeBar();
   private readonly toolButtons = new ToolButtons();
+  private readonly banner = new CarrierBanner();
   private readonly cashValue: HTMLElement;
   private readonly digRing: HTMLElement;
 
@@ -42,6 +44,7 @@ export class Hud {
     this.cashValue = mustQuery(this.el, '[data-cash]');
     this.digRing = mustQuery(this.el, '[data-dig]');
 
+    this.banner.mount(this.el);
     this.minimap.mount(this.el);
     this.upgrades.mount(this.el);
     this.toolButtons.mount(this.el);
@@ -62,6 +65,7 @@ export class Hud {
     this.minimap.start();
     this.upgrades.show();
     this.toolButtons.show();
+    this.banner.show();
     this.startCashAnim();
   }
 
@@ -72,6 +76,7 @@ export class Hud {
     this.minimap.stop();
     this.upgrades.hide();
     this.toolButtons.hide();
+    this.banner.hide();
     cancelAnimationFrame(this.cashRaf);
     this.cashRaf = 0;
   }

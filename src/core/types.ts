@@ -54,6 +54,9 @@ export interface HudSnapshot {
   digProgress: number; // 0..1 (0 = not digging) — drives the radial dig ring
   tools: ToolState[];
   carrying: boolean; // is the LOCAL player holding the Rock?
+  rockFound: boolean; // has the Rock surfaced?
+  carrierName: string | null; // current carrier's name (null = loose/unfound)
+  dockArrowDeg: number | null; // screen-space bearing to nearest dock while carrying
   timeLeftMs: number;
   heat: number; // 0..1
 }

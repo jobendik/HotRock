@@ -49,8 +49,33 @@ export interface Boat {
   digMs: number;
   /** Owned charges + active windows for the consumable tools. */
   tools: Record<ConsumableToolId, ToolRuntime>;
+  /** True while this boat is holding the Rock (set by the carry system). */
+  carrying: boolean;
+  /** Stat: Rock steals this round. */
+  steals: number;
+  /** Stat: total time spent holding the Rock (ms). */
+  carrierMs: number;
   /** Stable render colour (one of the player palette entries). */
   color: string;
+}
+
+/** The Hot Rock — the carryable everyone is chasing. */
+export interface Rock {
+  /** Has it been dug up / surfaced yet? */
+  found: boolean;
+  /** World position (tracks the carrier while carried). */
+  x: number;
+  y: number;
+  /** Current holder, or null when loose in the water. */
+  carrierId: PlayerId | null;
+  /** Most recent holder (drives the "STOLEN!" event on the next pickup). */
+  lastCarrierId: PlayerId | null;
+  /** Brief no-pickup window after a drop (ms). */
+  dropLockoutMs: number;
+  /** Accumulated dock-hold time toward extraction (ms). */
+  extractMs: number;
+  /** The site it's buried in until found (then null). */
+  siteId: string | null;
 }
 
 /** A static circular island collider. */
@@ -95,6 +120,9 @@ export interface WorldState {
   pickups: Pickup[];
   /** Monotonic id source for pickups. */
   nextPickupId: number;
+  rock: Rock;
+  /** Set true once the round has been decided; the sim then idles. */
+  over: boolean;
 }
 
 /** Player palette — also surfaced to the minimap. Index 0 is the local player. */
@@ -134,6 +162,9 @@ export function makeBoat(
       smoke: { count: 0, activeMsLeft: 0 },
       radar: { count: 0, activeMsLeft: 0 },
     },
+    carrying: false,
+    steals: 0,
+    carrierMs: 0,
     color,
   };
 }

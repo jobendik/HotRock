@@ -8,6 +8,7 @@ import { LocalWorldModel } from '@/game/world/LocalWorldModel';
 import type { WorldModel, WorldView } from '@/game/world/WorldModel';
 import { InputController } from '@/game/input/InputController';
 import { BoatView } from '@/game/render/BoatView';
+import { RockView } from '@/game/render/RockView';
 import { CONSUMABLE_IDS } from '@/sim/systems/economy';
 
 interface PrevState {
@@ -40,6 +41,7 @@ export class WorldScene extends Phaser.Scene {
   private readonly prev = new Map<PlayerId, PrevState>();
   private islandGfx: Phaser.GameObjects.Graphics | undefined;
   private sitesGfx: Phaser.GameObjects.Graphics | undefined;
+  private rockView: RockView | undefined;
 
   private readonly roundConfig: RoundConfig = {
     playerCount: 1,
@@ -60,6 +62,7 @@ export class WorldScene extends Phaser.Scene {
     this.inputCtl = new InputController();
 
     this.offBus.push(bus.on('intent:startRound', () => this.beginRound()));
+    this.offBus.push(bus.on('round:ended', () => this.endRound()));
     // Floating "+N" at the world position of a local gem pickup (juice).
     this.offBus.push(
       bus.on('gem:collected', ({ value, worldX, worldY }) => {
@@ -107,6 +110,14 @@ export class WorldScene extends Phaser.Scene {
     this.islandGfx = undefined;
     this.sitesGfx?.destroy();
     this.sitesGfx = undefined;
+    this.rockView?.destroy();
+    this.rockView = undefined;
+  }
+
+  /** Round decided (extraction or timeout): freeze the world but keep it on screen. */
+  private endRound(): void {
+    this.running = false;
+    this.cameras.main.stopFollow();
   }
 
   // ---- main loop ----
@@ -129,10 +140,34 @@ export class WorldScene extends Phaser.Scene {
     const alpha = clamp(this.accumulatorMs / TICK.fixedDtMs, 0, 1);
     const view = this.model.getView();
     this.renderBoats(view, alpha, time);
+    this.renderRock(view, alpha, time);
     this.drawSites(view, time);
     this.updateCamera(view);
     this.pushHud(view, time);
     this.pushMinimap(view, time);
+  }
+
+  private renderRock(view: WorldView, alpha: number, time: number): void {
+    const rock = view.rock;
+    if (!rock.found) {
+      this.rockView?.setVisible(false);
+      return;
+    }
+    if (!this.rockView) this.rockView = new RockView(this);
+    this.rockView.setVisible(true);
+
+    // While carried, track the carrier's interpolated render position for smoothness.
+    let x = rock.x;
+    let y = rock.y;
+    if (rock.carrierId) {
+      const cur = view.boats.find((b) => b.id === rock.carrierId);
+      const p = this.prev.get(rock.carrierId);
+      if (cur) {
+        x = p ? lerp(p.x, cur.x, alpha) : cur.x;
+        y = p ? lerp(p.y, cur.y, alpha) : cur.y;
+      }
+    }
+    this.rockView.sync(x, y, time, rock.carrierId !== null);
   }
 
   /** Redraw dig-site markers (cheap: a handful of circles), pulsing while undug. */
@@ -187,6 +222,8 @@ export class WorldScene extends Phaser.Scene {
     this.lastHudPushMs = time;
     const local = this.findLocal(view);
     if (!local) return;
+    const rock = view.rock;
+    const carrier = rock.carrierId ? view.boats.find((b) => b.id === rock.carrierId) : undefined;
     uiStore.set({
       cash: local.cash,
       speedTier: local.speedTier,
@@ -197,7 +234,10 @@ export class WorldScene extends Phaser.Scene {
         const t = local.tools[id];
         return { id, count: t.count, ready: t.count > 0 && t.activeMsLeft === 0, activeMsLeft: t.activeMsLeft };
       }),
-      carrying: false,
+      carrying: local.carrying,
+      rockFound: rock.found,
+      carrierName: carrier?.name ?? null,
+      dockArrowDeg: local.carrying ? this.bearingToNearestDock(local.x, local.y) : null,
       timeLeftMs: 0,
       heat: 0,
     });
@@ -210,6 +250,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildMinimap(view: WorldView): MinimapSnapshot {
+    const rock = view.rock;
     return {
       boats: view.boats.map((b) => ({
         id: b.id,
@@ -217,16 +258,31 @@ export class WorldScene extends Phaser.Scene {
         y: b.y,
         isLocal: b.id === this.localId,
         isBot: b.isBot,
-        carrying: false, // set in M4
+        carrying: b.id === rock.carrierId,
         color: b.color,
       })),
       sites: view.sites.map((s) => ({ id: s.id, x: s.x, y: s.y, dug: s.dug })),
       docks: DOCKS.map((d) => ({ x: d.x, y: d.y })),
-      rock: null,
+      rock: rock.found ? { x: rock.x, y: rock.y, carried: rock.carrierId !== null } : null,
       storm: null,
       worldW: view.width,
       worldH: view.height,
     };
+  }
+
+  /** Screen-space bearing (deg) from a point to the nearest dock; 0 = east, CW. */
+  private bearingToNearestDock(x: number, y: number): number {
+    let best = DOCKS[0];
+    let bestD = Infinity;
+    for (const d of DOCKS) {
+      const dd = (d.x - x) * (d.x - x) + (d.y - y) * (d.y - y);
+      if (dd < bestD) {
+        bestD = dd;
+        best = d;
+      }
+    }
+    const dock = best ?? { x, y };
+    return (Math.atan2(dock.y - y, dock.x - x) * 180) / Math.PI;
   }
 
   private spawnFloat(x: number, y: number, text: string): void {

@@ -1,6 +1,6 @@
 import type { InputFrame, PlayerId } from '@/core/types';
 import { clamp } from '@/core/math';
-import { BOAT, BOOST, MOVEMENT, SPEED_TIER_BONUS } from '@/config/balance';
+import { BOAT, BOOST, MOVEMENT, SPEED_TIER_BONUS, ROCK } from '@/config/balance';
 import type { Boat, WorldState } from '@/sim/WorldState';
 import { rotateToward, collideBoatIsland, separateBoats, applySoftWalls } from '@/sim/physics';
 
@@ -50,7 +50,8 @@ function updateBoat(boat: Boat, input: InputFrame, dt: number): void {
 
   const tierMul = 1 + boat.speedTier * SPEED_TIER_BONUS;
   const boostMul = boat.boosting ? BOOST.multiplier : 1;
-  const maxSpeed = BOAT.maxSpeed * tierMul * boostMul;
+  const carryMul = boat.carrying ? ROCK.carrierSpeedMult : 1; // small tax for holding the Rock
+  const maxSpeed = BOAT.maxSpeed * tierMul * boostMul * carryMul;
   const accel = BOAT.acceleration * tierMul * boostMul;
   const turnStep = BOAT.turnRateDegPerSec * DEG2RAD * dt;
 

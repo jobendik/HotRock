@@ -8,6 +8,7 @@ import { stepEconomy } from '@/sim/systems/economy';
 import { stepMovement } from '@/sim/systems/movement';
 import { stepDigging } from '@/sim/systems/digging';
 import { stepPickups } from '@/sim/systems/pickups';
+import { stepCarry } from '@/sim/systems/carry';
 
 const LOCAL_ID: PlayerId = 'p0';
 
@@ -33,6 +34,10 @@ export class GameSim {
     const sites = generateSites(rng, islands, spawnX, spawnY);
     const player: Boat = makeBoat(LOCAL_ID, 'You', false, spawnX, spawnY, PLAYER_COLORS[0]);
 
+    // Bury the Rock at exactly one random site (never via the loot table).
+    const rockSite = sites.length > 0 ? (sites[rng.int(sites.length)] ?? null) : null;
+    if (rockSite) rockSite.reward = { kind: 'rock' };
+
     this.state = {
       seed,
       rngState: rng.getState(),
@@ -45,6 +50,17 @@ export class GameSim {
       sites,
       pickups: [],
       nextPickupId: 0,
+      rock: {
+        found: false,
+        x: rockSite?.x ?? 0,
+        y: rockSite?.y ?? 0,
+        carrierId: null,
+        lastCarrierId: null,
+        dropLockoutMs: 0,
+        extractMs: 0,
+        siteId: rockSite?.id ?? null,
+      },
+      over: false,
     };
 
     this.sink.emit('round:started', {
@@ -56,12 +72,14 @@ export class GameSim {
 
   /** Advance the world by a fixed `dtMs` using the per-player inputs for this tick. */
   step(dtMs: number, inputs: Map<PlayerId, InputFrame>): void {
+    if (this.state.over) return; // round decided; idle until the next start()
     const dt = dtMs / 1000;
     this.state.timeMs += dtMs;
     stepEconomy(this.state, inputs, dt, this.sink);
     stepMovement(this.state, inputs, dt);
     stepDigging(this.state, dt, this.sink);
     stepPickups(this.state, dt, this.sink);
+    stepCarry(this.state, dt, this.sink);
   }
 
   getState(): WorldState {
@@ -81,6 +99,17 @@ export class GameSim {
       sites: [],
       pickups: [],
       nextPickupId: 0,
+      rock: {
+        found: false,
+        x: 0,
+        y: 0,
+        carrierId: null,
+        lastCarrierId: null,
+        dropLockoutMs: 0,
+        extractMs: 0,
+        siteId: null,
+      },
+      over: false,
     };
   }
 }
