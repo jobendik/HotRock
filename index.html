@@ -7,6 +7,22 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Hot Rock</title>
+    <meta name="description" content="A real-time treasure-smuggling .io game. Dig for gems, find the Rock, smuggle it home." />
+
+    <!-- Theme + installable web-app (Add to Home Screen runs fullscreen) -->
+    <meta name="theme-color" content="#06151a" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+
+    <!-- iOS / Android standalone hints -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Hot Rock" />
+    <!-- Don't let iOS linkify numbers in the HUD -->
+    <meta name="format-detection" content="telephone=no" />
+
     <!-- The CrazyGames SDK is loaded at runtime by src/platform/crazygames.ts (no key required). -->
   </head>
   <body>

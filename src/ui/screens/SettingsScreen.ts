@@ -12,6 +12,9 @@ export class SettingsScreen {
   private readonly soundBtn: HTMLButtonElement;
   private readonly volume: HTMLInputElement;
   private readonly qualityWrap: HTMLElement;
+  private readonly fsField: HTMLElement;
+  private readonly fsBtn: HTMLButtonElement;
+  private readonly fsSupported = typeof document.documentElement.requestFullscreen === 'function';
 
   constructor(private readonly onClose: () => void) {
     this.el = document.createElement('div');
@@ -34,12 +37,18 @@ export class SettingsScreen {
             ${QUALITIES.map((q) => `<button class="seg__btn" type="button" data-q="${q}">${q}</button>`).join('')}
           </div>
         </div>
+        <div class="field" data-fs-field hidden>
+          <span class="field__label">Fullscreen</span>
+          <button class="toggle" type="button" data-fs>Off</button>
+        </div>
         <button class="btn btn--primary" type="button" data-close>Done</button>
       </div>`;
 
     this.soundBtn = mustQ<HTMLButtonElement>(this.el, '[data-sound]');
     this.volume = mustQ<HTMLInputElement>(this.el, '[data-volume]');
     this.qualityWrap = mustQ(this.el, '[data-quality]');
+    this.fsField = mustQ(this.el, '[data-fs-field]');
+    this.fsBtn = mustQ<HTMLButtonElement>(this.el, '[data-fs]');
 
     this.soundBtn.addEventListener('click', () => settings.set({ sound: !settings.get().sound }));
     this.volume.addEventListener('input', () =>
@@ -50,7 +59,22 @@ export class SettingsScreen {
     });
     mustQ(this.el, '[data-close]').addEventListener('click', () => this.onClose());
 
+    if (this.fsSupported) {
+      this.fsField.hidden = false;
+      this.fsBtn.addEventListener('click', () => this.toggleFullscreen());
+      document.addEventListener('fullscreenchange', () => this.reflect());
+    }
+
     settings.subscribe(() => this.reflect());
+  }
+
+  private toggleFullscreen(): void {
+    try {
+      if (document.fullscreenElement) void document.exitFullscreen();
+      else void document.documentElement.requestFullscreen();
+    } catch (e) {
+      console.warn('[settings] fullscreen toggle failed', e);
+    }
   }
 
   mount(parent: HTMLElement): void {
@@ -74,6 +98,11 @@ export class SettingsScreen {
     this.qualityWrap.querySelectorAll<HTMLButtonElement>('[data-q]').forEach((btn) => {
       btn.classList.toggle('is-active', btn.dataset.q === s.quality);
     });
+    if (this.fsSupported) {
+      const on = document.fullscreenElement !== null;
+      this.fsBtn.textContent = on ? 'On' : 'Off';
+      this.fsBtn.classList.toggle('is-on', on);
+    }
   }
 }
 

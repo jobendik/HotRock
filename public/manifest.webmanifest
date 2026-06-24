@@ -1,0 +1,19 @@
+{
+  "name": "Hot Rock",
+  "short_name": "Hot Rock",
+  "description": "Dig for gems, find the legendary Rock, and smuggle it home before they ram it loose.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#06151a",
+  "theme_color": "#06151a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

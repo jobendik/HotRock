@@ -7,6 +7,7 @@ import { HowTo } from '@/ui/screens/HowTo';
 import { Hud } from '@/ui/hud/Hud';
 import { Toasts } from '@/ui/hud/Toasts';
 import { Sfx } from '@/ui/audio/Sfx';
+import { Mobile } from '@/ui/Mobile';
 
 /**
  * Top-level DOM UI controller. Mounts into #ui-root and swaps screens from the
@@ -19,6 +20,7 @@ export class UIRoot {
   private readonly hud = new Hud();
   private readonly toasts = new Toasts();
   private readonly sfx = new Sfx();
+  private readonly mobile = new Mobile();
   private readonly results: Results;
   private readonly settings: SettingsScreen;
   private readonly howto: HowTo;
@@ -49,6 +51,7 @@ export class UIRoot {
     this.howto.mount(root);
     this.toasts.mount(root);
     this.sfx.start();
+    this.mobile.start();
 
     bus.on('round:started', () => {
       this.menu.hide();
