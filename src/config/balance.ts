@@ -112,17 +112,19 @@ export const TOOLS: Record<ToolId, { durationMs: number }> = {
 
 /** The Hot Rock — the carryable macguffin everyone is chasing. */
 export const ROCK = {
-  carrierSpeedMult: 0.92, // small tax for holding it
+  carrierSpeedMult: 1.0, // carrier keeps full speed (no tax) so it can break away — but no bonus
   pickupRadius: 50,
-  stealSpeed: 180, // min relative approach speed to knock it loose by ramming
-  stealSpeedWithNet: 110, // easier if the rammer has a Net active
+  stealSpeed: 215, // a steal needs a committed ram, not a gentle bump
+  stealSpeedWithNet: 150, // easier if the rammer has a Net active
   stealContactPad: 10, // ram counts as contact within 2*BOAT.radius + this
   dropLockoutMs: 200, // brief no-pickup window after a drop
+  pickupGraceMs: 800, // the new carrier can't be stolen from this soon after grabbing
+  stealCooldownMs: 1100, // a rammer can't knock it loose again this soon (anti-camp)
   dropScatter: 36, // px the Rock skitters when dropped
 } as const;
 
 export const EXTRACT = {
-  holdMs: 2500, // hold at a dock to win; interrupted if rammed off
+  holdMs: 2200, // hold at a dock to win; interrupted if rammed off
   dockRadius: 90,
 } as const;
 
@@ -154,6 +156,8 @@ export const BOTS = {
   fleeRange: 240, // the carrier evades threats within this distance
   avoidRange: 90, // island-avoidance look-ahead padding
   prospectSlowRadius: 150, // ease the throttle when approaching a dig site
+  maxChasers: 6, // only the N nearest bots chase the carrier; the rest keep digging
+  dockApproachRadius: 300, // carrier eases off (and stops boosting) inside this of the dock
 } as const;
 
 export const ROUND = {

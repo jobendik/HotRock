@@ -13,7 +13,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,css}\" \"*.{json,md}\" \"docs/**/*.md\"",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest --passWithNoTests"
+    "test:watch": "vitest --passWithNoTests",
+    "balance": "vite-node scripts/balance.ts"
   },
   "dependencies": {
     "phaser": "^3.80.0"

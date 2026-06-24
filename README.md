@@ -55,6 +55,7 @@ The build uses a **relative base** (`base: './'`), so the same bundle also runs 
 | `lint` / `lint:fix` | ESLint (incl. layer-boundary rules) |
 | `format` | Prettier |
 | `test` / `test:watch` | Vitest (pure logic) |
+| `balance` | Headless balance harness — runs N full rounds of all-bot play and reports extraction rate, hand-offs, steals, round length (`ROUNDS=300 npm run balance`) |
 
 ## Controls
 **Desktop** — steer with WASD / arrow keys (optional mouse-aim toggle); **Boost** = Shift/Space;

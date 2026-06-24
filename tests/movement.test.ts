@@ -110,13 +110,13 @@ describe('movement', () => {
     expect(b.x).toBeLessThanOrEqual(4000 - BOAT.radius + 1e-6);
   });
 
-  it('the Rock carrier is slightly slower (carry tax)', () => {
+  it('the Rock carrier keeps full speed so it can break away (no carry tax)', () => {
     const free = makeWorld([makeBoat('p0', 'You', false, 2000, 1500, '#fff')]);
     const held = makeWorld([makeBoat('p0', 'You', false, 2000, 1500, '#fff')]);
     held.boats[0]!.carrying = true;
     const a = drive(free, input(1, 0), 600);
     const b = drive(held, input(1, 0), 600);
-    expect(Math.hypot(b.vx, b.vy)).toBeLessThan(Math.hypot(a.vx, a.vy));
+    expect(Math.hypot(b.vx, b.vy)).toBeGreaterThanOrEqual(Math.hypot(a.vx, a.vy) - 1e-6);
   });
 });
 

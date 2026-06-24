@@ -32,14 +32,16 @@ describe('BotAI', () => {
     expect(dir.x).toBeGreaterThan(0.5); // east, toward the site
   });
 
-  it('CARRY_RUN: as carrier, heads toward the nearest dock', () => {
-    // Placed near the bottom-right dock (3700, 2700) so the nearest is unambiguous.
+  it('CARRY_RUN: as carrier, runs toward the safest (least-defended) dock', () => {
     const dir = meanJoystick(() => {
-      const bot = makeBoat('bot0', 'B', true, 3000, 2200, '#0f0');
-      return makeWorld([bot], { rock: { found: true, carrierId: 'bot0', x: 3000, y: 2200 } });
+      const bot = makeBoat('bot0', 'B', true, 2400, 1900, '#0f0');
+      // Enemies camp the top-left and top-right docks → bottom-right (3700,2700) is safest.
+      const e1 = makeBoat('e1', 'E', true, 400, 400, '#f00');
+      const e2 = makeBoat('e2', 'E', true, 3600, 400, '#f00');
+      return makeWorld([bot, e1, e2], { rock: { found: true, carrierId: 'bot0', x: 2400, y: 1900 } });
     });
-    expect(dir.x).toBeGreaterThan(0.3);
-    expect(dir.y).toBeGreaterThan(0.3);
+    expect(dir.x).toBeGreaterThan(0.2); // toward the bottom-right dock
+    expect(dir.y).toBeGreaterThan(0.2);
   });
 
   it('STEAL: closes on the carrier when in range', () => {
