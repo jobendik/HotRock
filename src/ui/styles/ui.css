@@ -1,0 +1,87 @@
+/* Base UI chrome: full-screen screens, the menu card, and buttons.
+   Per-feature styles (HUD, minimap, results) get their own files later. */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) 24px;
+}
+.screen[hidden] {
+  display: none;
+}
+
+/* ---- Main menu ---- */
+.menu {
+  background: radial-gradient(120% 90% at 50% 0%, rgba(13, 47, 58, 0.6), rgba(6, 21, 26, 0.9));
+}
+.menu__card {
+  width: min(440px, 92vw);
+  padding: 28px 26px 30px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.menu__title {
+  margin: 4px 0 6px;
+  font-size: clamp(34px, 8vw, 52px);
+  letter-spacing: 0.5px;
+  color: var(--gold);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.menu__tag {
+  margin: 0 0 22px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--parch-dim);
+}
+.menu__row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.menu__row .btn {
+  flex: 1;
+}
+
+/* ---- Buttons ---- */
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px; /* generous touch target */
+  padding: 0 20px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--parch);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    filter 0.12s ease,
+    background 0.12s ease;
+}
+.btn:hover {
+  filter: brightness(1.12);
+}
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.btn--primary {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 18px;
+  color: var(--ink);
+  background: linear-gradient(180deg, #ffd76a, var(--gold));
+  border-color: #d9a93b;
+}
