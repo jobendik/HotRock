@@ -38,6 +38,27 @@ describe('full round vs bots', () => {
     expect(steps).toBeLessThan(maxSteps); // ended on its own, not by the safety cap
   });
 
+  it('a healthy share of rounds end by delivery (balance guard — was 0%)', () => {
+    const N = 16;
+    let extracted = 0;
+    for (let s = 0; s < N; s++) {
+      const sink = new TestSink();
+      const sim = new GameSim(sink);
+      sim.start(1000 + s, { playerCount: 1, botCount: 8, durationMs: ROUND.durationMs });
+      const botRng = new Rng(1000 + s);
+      const inputs = new Map<PlayerId, InputFrame>();
+      const maxSteps = Math.ceil(ROUND.durationMs / (DT * 1000)) + 30;
+      for (let i = 0; i < maxSteps && !sim.getState().over; i++) {
+        const state = sim.getState();
+        for (const b of state.boats) inputs.set(b.id, decide(state, b, botRng)); // all skilled
+        sim.step(DT * 1000, inputs);
+      }
+      if (sink.names().includes('rock:extracted')) extracted++;
+    }
+    // Carriers must be able to reach a dock and win; this was 0% before tuning.
+    expect(extracted / N).toBeGreaterThan(0.5);
+  });
+
   it('is reproducible from the seed', () => {
     const play = (seed: number): number => {
       const sim = new GameSim(new TestSink());

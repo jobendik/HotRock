@@ -51,6 +51,8 @@ export interface Boat {
   tools: Record<ConsumableToolId, ToolRuntime>;
   /** True while this boat is holding the Rock (set by the carry system). */
   carrying: boolean;
+  /** Cooldown (ms) before this boat can knock the Rock loose again (anti-camp). */
+  stealCooldownMs: number;
   /** Stat: Rock steals this round. */
   steals: number;
   /** Stat: total time spent holding the Rock (ms). */
@@ -72,6 +74,8 @@ export interface Rock {
   lastCarrierId: PlayerId | null;
   /** Brief no-pickup window after a drop (ms). */
   dropLockoutMs: number;
+  /** Steal-immunity window for the current carrier just after pickup (ms). */
+  graceMsLeft: number;
   /** Accumulated dock-hold time toward extraction (ms). */
   extractMs: number;
   /** The site it's buried in until found (then null). */
@@ -200,6 +204,7 @@ export function makeBoat(
     digs: 0,
     digSiteId: null,
     digMs: 0,
+    stealCooldownMs: 0,
     tools: {
       net: { count: 0, activeMsLeft: 0 },
       smoke: { count: 0, activeMsLeft: 0 },

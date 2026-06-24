@@ -1,7 +1,7 @@
 import type { InputFrame } from '@/core/types';
 import type { Rng } from '@/core/rng';
 import { dist, TAU, type Vec2 } from '@/core/math';
-import { BOTS, DIG, DOCKS } from '@/config/balance';
+import { BOTS, DIG, DOCKS, EXTRACT } from '@/config/balance';
 import { nextTierCost, flatCost } from '@/sim/systems/economy';
 import type { WorldState, Boat } from '@/sim/WorldState';
 
@@ -23,7 +23,13 @@ export function decide(state: WorldState, self: Boat, rng: Rng): InputFrame {
     const carrier = boatById(state, rock.carrierId);
     if (carrier) {
       const d = dist(self.x, self.y, carrier.x, carrier.y);
-      return d < BOTS.stealRange ? steal(state, self, carrier, rng) : intercept(state, self, carrier, rng);
+      if (d < BOTS.stealRange) return steal(state, self, carrier, rng); // adjacent → always pounce
+      // Only the nearest few commit to the chase; the rest keep prospecting so
+      // the carrier isn't dogpiled (and they rejoin when the Rock comes near).
+      if (isAmongClosest(state, self, carrier, BOTS.maxChasers)) {
+        return intercept(state, self, carrier, rng);
+      }
+      return prospect(state, self, rng);
     }
   }
 
@@ -68,22 +74,38 @@ function steal(state: WorldState, self: Boat, carrier: Boat, rng: Rng): InputFra
 }
 
 function carryRun(state: WorldState, self: Boat, rng: Rng): InputFrame {
-  const dock = nearestDock(self);
-  let dir = steer(state, self, dock.x, dock.y);
+  // Commit to the dock we can reach with the biggest head start.
+  const dock = safestDock(state, self);
+  const dd = dist(self.x, self.y, dock.x, dock.y);
 
-  // FLEE: bias away from the nearest chaser, and pop Smoke if we have it.
+  // On the dock: PARK (release the stick) so the boat brakes and holds inside the
+  // extract radius for the full timer instead of flying straight through it.
+  if (dd < EXTRACT.dockRadius * 0.55) return frame({ x: 0, y: 0 });
+
+  let dir = steer(state, self, dock.x, dock.y);
   const threat = nearestThreat(state, self);
-  const extra: Partial<InputFrame> = { boost: true };
-  if (threat && dist(self.x, self.y, threat.x, threat.y) < BOTS.fleeRange) {
-    const ax = self.x - threat.x;
-    const ay = self.y - threat.y;
-    const m = Math.hypot(ax, ay) || 1;
-    dir = normalize(dir.x + (ax / m) * 0.7, dir.y + (ay / m) * 0.7);
-    if (self.tools.smoke.count > 0 && self.tools.smoke.activeMsLeft === 0) extra.useTool = 'smoke';
+  const threatened = threat !== null && dist(self.x, self.y, threat.x, threat.y) < BOTS.fleeRange;
+  const approaching = dd < BOTS.dockApproachRadius;
+
+  // Juke past chasers while still running in — but NOT while settling onto the
+  // dock, or we'd circle it forever.
+  if (threatened && threat && !approaching) {
+    const perp = { x: -dir.y, y: dir.x };
+    const side = (threat.x - self.x) * perp.x + (threat.y - self.y) * perp.y > 0 ? -1 : 1;
+    dir = normalize(dir.x + perp.x * side * 0.6, dir.y + perp.y * side * 0.6);
+  }
+
+  // Ease off + stop boosting near the dock so we settle precisely instead of
+  // overshooting at sprint speed.
+  const throttle = approaching ? Math.max(0.18, dd / BOTS.dockApproachRadius) : 1;
+  const extra: Partial<InputFrame> = { boost: !approaching };
+  if (threatened && self.tools.smoke.count > 0 && self.tools.smoke.activeMsLeft === 0) {
+    extra.useTool = 'smoke';
   } else if (self.tools.smoke.count === 0 && canAfford(self, flatCost('smoke'))) {
     extra.buyUpgrade = 'smoke';
   }
-  return frame(humanize(dir, rng), extra);
+  const j = humanize(dir, rng);
+  return frame({ x: j.x * throttle, y: j.y * throttle }, extra);
 }
 
 // ---- helpers ----
@@ -144,6 +166,17 @@ function boatById(state: WorldState, id: string): Boat | null {
   return null;
 }
 
+/** True if `self` is one of the `n` boats closest to the carrier (excluding it). */
+function isAmongClosest(state: WorldState, self: Boat, carrier: Boat, n: number): boolean {
+  const d = dist(self.x, self.y, carrier.x, carrier.y);
+  let closer = 0;
+  for (const b of state.boats) {
+    if (b.id === self.id || b.id === carrier.id) continue;
+    if (dist(b.x, b.y, carrier.x, carrier.y) < d) closer++;
+  }
+  return closer < n;
+}
+
 function nearestUndugSite(state: WorldState, self: Boat): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
   let bestD = Infinity;
@@ -158,13 +191,21 @@ function nearestUndugSite(state: WorldState, self: Boat): { x: number; y: number
   return best;
 }
 
-function nearestDock(self: Boat): { x: number; y: number } {
+/** The dock the carrier can reach with the biggest lead over the nearest chaser. */
+function safestDock(state: WorldState, self: Boat): { x: number; y: number } {
   let best = DOCKS[0]!;
-  let bestD = Infinity;
+  let bestScore = -Infinity;
   for (const d of DOCKS) {
-    const dd = dist(self.x, self.y, d.x, d.y);
-    if (dd < bestD) {
-      bestD = dd;
+    const selfD = dist(self.x, self.y, d.x, d.y);
+    let minEnemy = Infinity;
+    for (const b of state.boats) {
+      if (b.id === self.id) continue;
+      const e = dist(b.x, b.y, d.x, d.y);
+      if (e < minEnemy) minEnemy = e;
+    }
+    const score = minEnemy - selfD; // bigger = safer to reach first
+    if (score > bestScore) {
+      bestScore = score;
       best = d;
     }
   }

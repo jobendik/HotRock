@@ -40,6 +40,7 @@ export function makeWorld(boats: Boat[], patch: WorldPatch = {}): WorldState {
       carrierId: null,
       lastCarrierId: null,
       dropLockoutMs: 0,
+      graceMsLeft: 0,
       extractMs: 0,
       siteId: null,
     },

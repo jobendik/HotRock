@@ -15,12 +15,15 @@ import { buildResults } from '@/sim/results';
 export function stepCarry(state: WorldState, dt: number, sink: EventSink): void {
   if (state.over) return;
   const rock = state.rock;
-  for (const b of state.boats) b.carrying = false;
+  const dtMs = dt * 1000;
+  for (const b of state.boats) {
+    b.carrying = false;
+    if (b.stealCooldownMs > 0) b.stealCooldownMs = Math.max(0, b.stealCooldownMs - dtMs);
+  }
   if (!rock.found) return;
 
-  if (rock.dropLockoutMs > 0) {
-    rock.dropLockoutMs = Math.max(0, rock.dropLockoutMs - dt * 1000);
-  }
+  if (rock.dropLockoutMs > 0) rock.dropLockoutMs = Math.max(0, rock.dropLockoutMs - dtMs);
+  if (rock.graceMsLeft > 0) rock.graceMsLeft = Math.max(0, rock.graceMsLeft - dtMs);
 
   const carrier = rock.carrierId ? findBoat(state, rock.carrierId) : null;
   if (carrier) {
@@ -49,6 +52,7 @@ export function autoSurfaceRock(state: WorldState, sink: EventSink): void {
   rock.carrierId = null;
   rock.lastCarrierId = null;
   rock.extractMs = 0;
+  rock.graceMsLeft = 0;
   // x/y already hold the buried site position.
   sink.emit('rock:found', { byId: '', worldX: rock.x, worldY: rock.y });
   sink.emit('toast', { kind: 'epic', text: 'The Rock surfaced!' });
@@ -64,17 +68,19 @@ export function surfaceRock(state: WorldState, digger: Boat, sink: EventSink): v
   rock.x = digger.x;
   rock.y = digger.y;
   rock.extractMs = 0;
+  rock.graceMsLeft = ROCK.pickupGraceMs;
   digger.carrying = true;
   sink.emit('rock:found', { byId: digger.id, worldX: digger.x, worldY: digger.y });
   sink.emit('toast', { kind: 'epic', text: 'The Rock surfaced!' });
 }
 
 function handleSteals(state: WorldState, carrier: Boat, sink: EventSink): void {
+  if (state.rock.graceMsLeft > 0) return; // carrier is briefly immune after grabbing
   const contact = BOAT.radius * 2 + ROCK.stealContactPad;
   let rammer: Boat | null = null;
   let bestClosing = 0;
   for (const b of state.boats) {
-    if (b.id === carrier.id) continue;
+    if (b.id === carrier.id || b.stealCooldownMs > 0) continue;
     const dx = carrier.x - b.x;
     const dy = carrier.y - b.y;
     const d = Math.hypot(dx, dy) || 0.0001;
@@ -109,6 +115,7 @@ function knockLoose(state: WorldState, carrier: Boat, rammer: Boat, sink: EventS
   rock.dropLockoutMs = ROCK.dropLockoutMs;
   rock.extractMs = 0;
   carrier.carrying = false;
+  rammer.stealCooldownMs = ROCK.stealCooldownMs; // can't immediately re-ram the next carrier
 
   sink.emit('rock:dropped', { worldX: rock.x, worldY: rock.y });
   sink.emit('player:hit', { targetId: carrier.id, byId: rammer.id, reason: 'ram' });
@@ -132,6 +139,7 @@ function handlePickup(state: WorldState, sink: EventSink): void {
   const prev = rock.lastCarrierId;
   rock.carrierId = grabber.id;
   rock.extractMs = 0;
+  rock.graceMsLeft = ROCK.pickupGraceMs;
   grabber.carrying = true;
 
   if (prev !== null && prev !== grabber.id) {
