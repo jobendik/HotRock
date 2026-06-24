@@ -1,0 +1,31 @@
+{
+  "name": "hot-rock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hot Rock — a real-time treasure-smuggling .io game for CrazyGames (vertical slice).",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,css}\" \"*.{json,md}\" \"docs/**/*.md\"",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "phaser": "^3.80.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.0.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}

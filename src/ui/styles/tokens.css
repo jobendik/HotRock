@@ -1,0 +1,68 @@
+:root {
+  --bg: #06151a;
+  --panel: #0e2227;
+  --panel-2: #091a1f;
+  --line: #21454f;
+  --ink: #2b1f12;
+  --parch: #efe3c6;
+  --parch-dim: #bdb094;
+  --gold: #f0c24a;
+  --crimson: #c2483b;
+  --ok: #41c98b;
+  --p0: #ef6f53;
+  --p1: #4f9bf0;
+  --p2: #38c98b;
+  --p3: #c77dff;
+  --radius: 12px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--parch);
+  font-family: var(--font-ui);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Game canvas sits behind the DOM UI overlay. */
+#game-root,
+#ui-root {
+  position: absolute;
+  inset: 0;
+}
+/* The overlay is click-through by default; interactive children opt back in. */
+#ui-root {
+  pointer-events: none;
+}
+#ui-root > * {
+  pointer-events: auto;
+}
+
+.boot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--parch);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
