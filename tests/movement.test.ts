@@ -70,13 +70,22 @@ describe('movement', () => {
     expect(b.vx).toBeGreaterThan(0);
   });
 
-  it('coasts down with momentum when the stick is released (drift)', () => {
+  it('brakes to a stop quickly when the stick is released (so you can park to dig)', () => {
     const state = makeWorld([makeBoat('p0', 'You', false, 2000, 1500, '#fff')]);
     drive(state, input(1, 0), 60);
     const moving = Math.hypot(state.boats[0]!.vx, state.boats[0]!.vy);
-    expect(moving).toBeGreaterThan(0);
-    const b = drive(state, input(0, 0), 600);
-    expect(Math.hypot(b.vx, b.vy)).toBeLessThan(moving * 0.5);
+    expect(moving).toBeGreaterThan(150);
+    // Release for 1.5s — must be essentially stopped, not still sliding away.
+    const b = drive(state, input(0, 0), 90);
+    expect(Math.hypot(b.vx, b.vy)).toBeLessThan(10);
+  });
+
+  it('still keeps momentum while actively steering (drift, not instant stop)', () => {
+    const state = makeWorld([makeBoat('p0', 'You', false, 2000, 1500, '#fff')]);
+    drive(state, input(1, 0), 90); // up to speed heading +x
+    // Snap the stick to +y: the boat should curve, retaining some +x momentum.
+    const b = drive(state, input(0, 1), 6);
+    expect(b.vx).toBeGreaterThan(40); // hasn't instantly killed the old heading
   });
 
   it('clamps to max speed without boost', () => {

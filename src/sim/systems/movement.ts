@@ -60,7 +60,8 @@ function updateBoat(boat: Boat, input: InputFrame, dt: number): void {
   const mag = clamp(Math.hypot(jx, jy), 0, 1);
   const prevAngle = boat.angle;
 
-  if (mag > MOVEMENT.joystickDeadzone) {
+  const thrusting = mag > MOVEMENT.joystickDeadzone;
+  if (thrusting) {
     const desired = Math.atan2(jy, jx);
     boat.angle = rotateToward(boat.angle, desired, turnStep);
     boat.vx += Math.cos(boat.angle) * accel * mag * dt;
@@ -68,8 +69,10 @@ function updateBoat(boat: Boat, input: InputFrame, dt: number): void {
   }
   boat.angularVel = (boat.angle - prevAngle) / dt;
 
-  // Drag (continuous): retains BOAT.dragPerSec of speed each second.
-  const drag = Math.pow(BOAT.dragPerSec, dt);
+  // Light drag while steering (momentum), strong drag when the stick is released
+  // so the boat brakes to a stop and you can park on a dig site.
+  const dragPerSec = thrusting ? BOAT.dragActive : BOAT.dragIdle;
+  const drag = Math.pow(dragPerSec, dt);
   boat.vx *= drag;
   boat.vy *= drag;
 
