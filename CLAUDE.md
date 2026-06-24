@@ -56,4 +56,4 @@ typecheck + lint + test pass · `dev` runs · no new `any` · all gameplay numbe
 - `docs/CONVENTIONS.md` — coding standards & patterns.
 
 ## Current status
-> Keep this line current as you progress. **Milestone: M0 — scaffolding.**
+> Keep this line current as you progress. **Milestone: M0 complete — scaffolding done (layers, event contract, platform stub, Phaser boots a blank WorldScene, DOM Main Menu emits `intent:startRound`). Next: M1 — boat + world + camera + input.**
