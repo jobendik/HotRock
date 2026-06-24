@@ -4,6 +4,7 @@ import { Rng } from '@/core/rng';
 import { WORLD } from '@/config/balance';
 import { type WorldState, type Boat, makeBoat, PLAYER_COLORS } from '@/sim/WorldState';
 import { generateIslands, generateSites } from '@/sim/worldgen';
+import { stepEconomy } from '@/sim/systems/economy';
 import { stepMovement } from '@/sim/systems/movement';
 import { stepDigging } from '@/sim/systems/digging';
 import { stepPickups } from '@/sim/systems/pickups';
@@ -57,6 +58,7 @@ export class GameSim {
   step(dtMs: number, inputs: Map<PlayerId, InputFrame>): void {
     const dt = dtMs / 1000;
     this.state.timeMs += dtMs;
+    stepEconomy(this.state, inputs, dt, this.sink);
     stepMovement(this.state, inputs, dt);
     stepDigging(this.state, dt, this.sink);
     stepPickups(this.state, dt, this.sink);

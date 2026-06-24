@@ -56,4 +56,4 @@ typecheck + lint + test pass · `dev` runs · no new `any` · all gameplay numbe
 - `docs/CONVENTIONS.md` — coding standards & patterns.
 
 ## Current status
-> Keep this line current as you progress. **Milestone: M2 complete — dig sites (seeded loot), hold/auto digging with radial ring, gems→cash with animated counter + floating "+N", traps (knockback + scattered loose gems), pickups system, and a DOM `<canvas>` minimap (boats/sites/docks). Next: M3 — upgrades + tools.**
+> Keep this line current as you progress. **Milestone: M3 complete — DOM upgrade bar (buy/affordability/engine tier badge), Engine tiers + Refuel applied in `sim/systems/economy`, Net/Smoke/Radar consumables with active windows + tool-use buttons, Sonar ping toast, one-shot commands routed once-per-fixed-step via the input frame, toasts. Next: M4 — the Hot Rock (hot potato).**

@@ -6,6 +6,8 @@
 export type PlayerId = string;
 
 export type ToolId = 'boost' | 'net' | 'smoke' | 'radar';
+/** Purchasable consumable tools (everything except the core Boost meter). */
+export type ConsumableToolId = Exclude<ToolId, 'boost'>;
 export type UpgradeId = 'speed' | 'boostRefill' | 'net' | 'smoke' | 'radar';
 export type QualityLevel = 'low' | 'medium' | 'high';
 export type ToastKind = 'info' | 'good' | 'bad' | 'epic';
@@ -40,7 +42,8 @@ export interface RoundConfig {
 export interface ToolState {
   id: ToolId;
   count: number; // remaining one-shot charges (boost uses the charge meter instead)
-  ready: boolean; // off-cooldown / usable now
+  ready: boolean; // owned + not currently active → usable now
+  activeMsLeft: number; // >0 while the tool's window is open
 }
 
 /** UI-facing HUD snapshot. Pushed ~12–15Hz via the store — never every frame. */

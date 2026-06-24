@@ -1,4 +1,10 @@
-import type { PlayerId, DigReward } from '@/core/types';
+import type { PlayerId, DigReward, ConsumableToolId } from '@/core/types';
+
+/** Per-consumable-tool runtime: owned charges + remaining active window. */
+export interface ToolRuntime {
+  count: number;
+  activeMsLeft: number;
+}
 
 /**
  * The authoritative world — plain serialisable data only (NO Phaser, NO DOM).
@@ -41,6 +47,8 @@ export interface Boat {
   digSiteId: string | null;
   /** Hold time accrued at `digSiteId` (ms). */
   digMs: number;
+  /** Owned charges + active windows for the consumable tools. */
+  tools: Record<ConsumableToolId, ToolRuntime>;
   /** Stable render colour (one of the player palette entries). */
   color: string;
 }
@@ -121,6 +129,11 @@ export function makeBoat(
     digs: 0,
     digSiteId: null,
     digMs: 0,
+    tools: {
+      net: { count: 0, activeMsLeft: 0 },
+      smoke: { count: 0, activeMsLeft: 0 },
+      radar: { count: 0, activeMsLeft: 0 },
+    },
     color,
   };
 }

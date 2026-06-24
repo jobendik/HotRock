@@ -8,6 +8,7 @@ import { LocalWorldModel } from '@/game/world/LocalWorldModel';
 import type { WorldModel, WorldView } from '@/game/world/WorldModel';
 import { InputController } from '@/game/input/InputController';
 import { BoatView } from '@/game/render/BoatView';
+import { CONSUMABLE_IDS } from '@/sim/systems/economy';
 
 interface PrevState {
   x: number;
@@ -115,12 +116,12 @@ export class WorldScene extends Phaser.Scene {
 
     // Clamp the frame so a long stall can't trigger a step spiral.
     this.accumulatorMs += Math.min(delta, TICK.fixedDtMs * TICK.maxStepsPerFrame);
-    const input = this.inputCtl.sample();
 
+    // Sample once PER fixed step so one-shot commands (buy/use) apply exactly once.
     let steps = 0;
     while (this.accumulatorMs >= TICK.fixedDtMs && steps < TICK.maxStepsPerFrame) {
       this.snapshotPrev(this.model.getView());
-      this.model.update(TICK.fixedDtMs, input);
+      this.model.update(TICK.fixedDtMs, this.inputCtl.sample());
       this.accumulatorMs -= TICK.fixedDtMs;
       steps++;
     }
@@ -192,7 +193,10 @@ export class WorldScene extends Phaser.Scene {
       // Read the bar as full while a boost is actively firing, then refilling.
       boostCharge: local.boosting ? 1 : local.boostCharge,
       digProgress: local.digSiteId ? clamp(local.digMs / DIG.timeMs, 0, 1) : 0,
-      tools: [],
+      tools: CONSUMABLE_IDS.map((id) => {
+        const t = local.tools[id];
+        return { id, count: t.count, ready: t.count > 0 && t.activeMsLeft === 0, activeMsLeft: t.activeMsLeft };
+      }),
       carrying: false,
       timeLeftMs: 0,
       heat: 0,

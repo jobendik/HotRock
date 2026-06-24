@@ -2,6 +2,8 @@ import { uiStore } from '@/core/store';
 import type { HudSnapshot } from '@/core/types';
 import { MobileControls } from '@/ui/hud/MobileControls';
 import { Minimap } from '@/ui/hud/Minimap';
+import { UpgradeBar } from '@/ui/hud/UpgradeBar';
+import { ToolButtons } from '@/ui/hud/ToolButtons';
 
 /**
  * In-round HUD overlay (DOM). Subscribes to the throttled store snapshot and
@@ -13,6 +15,8 @@ export class Hud {
   readonly el: HTMLElement;
   private readonly controls = new MobileControls();
   private readonly minimap = new Minimap();
+  private readonly upgrades = new UpgradeBar();
+  private readonly toolButtons = new ToolButtons();
   private readonly cashValue: HTMLElement;
   private readonly digRing: HTMLElement;
 
@@ -39,6 +43,8 @@ export class Hud {
     this.digRing = mustQuery(this.el, '[data-dig]');
 
     this.minimap.mount(this.el);
+    this.upgrades.mount(this.el);
+    this.toolButtons.mount(this.el);
     this.controls.mount(this.el);
   }
 
@@ -54,6 +60,8 @@ export class Hud {
     this.apply(uiStore.get());
     this.unsub = uiStore.subscribe((s) => this.apply(s));
     this.minimap.start();
+    this.upgrades.show();
+    this.toolButtons.show();
     this.startCashAnim();
   }
 
@@ -62,6 +70,8 @@ export class Hud {
     this.unsub?.();
     this.unsub = undefined;
     this.minimap.stop();
+    this.upgrades.hide();
+    this.toolButtons.hide();
     cancelAnimationFrame(this.cashRaf);
     this.cashRaf = 0;
   }
